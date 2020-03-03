@@ -66,6 +66,7 @@ class GameRunner:
         pygame.quit()
         exit()
 
+#class to start the game. AKin to TicTacToeApplication in Assignment 1 of Software Design
 class MainGameApplication:
     def RunGame(self):
         self.NewGame = GameRunner()
