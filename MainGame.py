@@ -1,6 +1,6 @@
 #third party libraries
 import pygame
-import tcod as libtcodpy
+import tcod
 
 #game files
 import constants
@@ -14,6 +14,7 @@ class tileStrucutre:
 class GameDraw:
     def __init__(self,surface):
         self.surface = surface
+
     def draw_game(self):
 
         self.surface.fill(constants.colorDefaultBG)
@@ -49,27 +50,28 @@ class GameRunner:
     def __init__(self):
         pygame.init()
         self.surfaceMain = pygame.display.set_mode( (constants.gameWidth,constants.gameHeight) )
-        self.gameMap = Map()
-    
+
     def game_main_loop(self):
 
-        self.gameQuitStatus = False
-        while not self.gameQuitStatus:
+        gameQuitStatus = False
+        while not gameQuitStatus:
         
             GameDrawer = GameDraw(self.surfaceMain)
             GameDrawer.draw_game()
             events = pygame.event.get()
             for event in events:
                 if event.type == pygame.QUIT:
-                    self.gameQuitStatus = True
+                    gameQuitStatus = True
 
         pygame.quit()
         exit()
 
 #class to start the game. AKin to TicTacToeApplication in Assignment 1 of Software Design
 class MainGameApplication:
-    def RunGame(self):
+    def __init__(self):
         self.NewGame = GameRunner()
+        
+    def RunGame(self):
         self.NewGame.game_main_loop()
 
 if __name__ == '__main__':
