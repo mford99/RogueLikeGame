@@ -6,6 +6,21 @@ from typing import Tuple
 #game files
 import constants
 
+#class for a meni such as an inventory menu that pauses the game
+class menuPause():
+    def menuPause(self):
+
+        menuClose = False
+        while not menuClose:
+            eventList = pygame.event.get()
+
+            for event in eventList:
+                if event.type == pygame.KEYDOWN:
+
+                    if event.key == pygame.K_p:
+                        menuClose = True
+
+
 #baseclass for an actor. Actor being any object that can interact with a surface
 class Actor:
     def __init__(self, x, y, sprite, surface, map, enemyList, creature = None, ai = None, container = None, item = None):
@@ -190,7 +205,7 @@ class drawText:
         self.colour = textColour
         self.textSurface = constants.fontMessageText.render(self.message, False, self.colour)
         self.textRect = self.textSurface.get_rect()
-    def drawOnSurface(self, incomingBGColor= None):
+    def drawOnSurface(self, incomingBGColor = None):
         
         if incomingBGColor:
             self.textSurface = constants.fontMessageText.render(self.message, False, self.colour, incomingBGColor)
@@ -265,6 +280,7 @@ class GameRunner:
         self.gameMessages = []
         self.ai = AI()
         self.playerInv = Container()
+        self.menu = menuPause()
         self.clock = pygame.time.Clock()
         self.surfaceMain = pygame.display.set_mode( (constants.mapWidth*constants.cellWidth,constants.mapHeight*constants.cellHeight) )
         self.fovCalculate = True
@@ -355,8 +371,8 @@ class GameRunner:
                          if gameMessages != []:
                                 for message in gameMessages:
                                     self.gameMessagesAppend(message,constants.colorWhite)
-
-
+                elif event.key == pygame.K_p:
+                    self.menu.menuPause()
         return "no-action"
 
 #class to start the game. AKin to TicTacToeApplication in Assignment 1 of Software Design
