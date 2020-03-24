@@ -6,6 +6,21 @@ from typing import Tuple
 #game files
 import constants
 
+#class for a meni such as an inventory menu that pauses the game
+class menuPause():
+    def menuPause(self):
+
+        menuClose = False
+        while not menuClose:
+            eventList = pygame.event.get()
+
+            for event in eventList:
+                if event.type == pygame.KEYDOWN:
+
+                    if event.key == pygame.K_p:
+                        menuClose = True
+
+
 #baseclass for an actor. Actor being any object that can interact with a surface
 class Actor:
     def __init__(self, x, y, sprite, surface, map, enemyList, creature = None, ai = None):
@@ -35,13 +50,11 @@ class Actor:
             if (enemy.x == self.x + dx and enemy.y == self.y + dy):
                 target = enemy
                 break
-        if not tileIsWall and target is None: 
+        if not tileIsWall and (target is None or target.creature.hp <=0): 
             self.x += dx
             self.y += dy
         if target and target.creature is not None:
-            gameMessage.append(self.creature.name + " attacks " + target.creature.name + "for 3 damage")
-            print(self.creature.name + " attacks " + target.creature.name + "for 3 damage")
-          #  print(self.creature.name + " attacks " + target.creature.name + "for 3 damage")
+            gameMessage.append(self.creature.name + " attacks " + target.creature.name + " for 3 damage")
             deathMessage = target.creature.takeDamage(3)
             if deathMessage:
                 gameMessage.append(deathMessage)
@@ -143,7 +156,7 @@ class drawText:
         self.colour = textColour
         self.textSurface = constants.fontMessageText.render(self.message, False, self.colour)
         self.textRect = self.textSurface.get_rect()
-    def drawOnSurface(self, incomingBGColor= None):
+    def drawOnSurface(self, incomingBGColor = None):
         
         if incomingBGColor:
             self.textSurface = constants.fontMessageText.render(self.message, False, self.colour, incomingBGColor)
@@ -214,6 +227,7 @@ class GameRunner:
         pygame.init()
         self.gameMessages = []
         self.ai = AI()
+        self.menu = menuPause()
         self.clock = pygame.time.Clock()
         self.surfaceMain = pygame.display.set_mode( (constants.mapWidth*constants.cellWidth,constants.mapHeight*constants.cellHeight) )
         self.fovCalculate = True
@@ -286,6 +300,8 @@ class GameRunner:
                             self.gameMessagesAppend(message,constants.colorWhite)
                    self.map.fovCalculate = True
                    return "player-moved"
+                elif event.key == pygame.K_p:
+                    self.menu.menuPause()
         return "no-action"
 
 #class to start the game. AKin to TicTacToeApplication in Assignment 1 of Software Design
