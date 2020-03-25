@@ -43,7 +43,8 @@ class menu():
         inventorySurface = pygame.Surface((menuWidth,menuHeight))
 
         printList = [obj.objName for obj in self.player.container.inventory]
-
+        menuX = windowsWidth/2 - menuWidth/2
+        menuY = windowsHeight/2-menuHeight/2
         while not menuClose:
             inventorySurface.fill(constants.colorBlack)
             eventList = pygame.event.get()
@@ -58,7 +59,7 @@ class menu():
                                    (0,0+i*1))
                 drawInv.coords = (0,0+i*drawInv.textHeight())
                 drawInv.drawOnSurface()
-            self.surface.blit(inventorySurface, ((windowsWidth/2 - menuWidth/2),(windowsHeight/2-menuHeight/2)))
+            self.surface.blit(inventorySurface, ((menuX),(menuY)))
             pygame.display.update()
 
 #baseclass for an actor. Actor being any object that can interact with a surface
