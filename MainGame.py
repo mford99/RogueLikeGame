@@ -53,30 +53,25 @@ class menu():
 
                     if event.key == pygame.K_i:
                         menuClose = True
-            for i, (name) in enumerate(printList):
-                drawInvText = drawText(inventorySurface,name,constants.colorWhite,
-                (0, 0+ i*1))
-                drawInvText.coords = (0, 0+i*drawInvText.textHeight())
-                drawInvText.drawOnSurface(constants.colorBlack)
+            for i , (name) in enumerate(printList):
+                drawInv = drawText(inventorySurface, name, constants.colorWhite,
+                                   (0,0+i*1))
+                drawInv.coords = (0,0+i*drawInv.textHeight())
+                drawInv.drawOnSurface()
             self.surface.blit(inventorySurface, ((windowsWidth/2 - menuWidth/2),(windowsHeight/2-menuHeight/2)))
             pygame.display.update()
 
-
-#baseclass for an actor. Actor being any object that can interact with or be put on a surface
+#baseclass for an actor. Actor being any object that can interact with a surface
 class Actor:
-<<<<<<< HEAD
-    def __init__(self, x, y, sprite, surface, map, enemyList, creature = None, ai = None, container = None, item = None):
-=======
-    def __init__(self, x, y, sprite, surface, map, enemyList, objName, creature = None, ai = None):
->>>>>>> 4cbbaa8... Minor changes to menu class for inv menu
+    def __init__(self, x, y, sprite, surface, map, enemyList, objName,creature = None, ai = None, container = None, item = None):
         self.x = x #map address
         self.y = y # map address
-        self.objName = objName
         self.sprite = sprite
         self.surface = surface
         self.map = map
         self.ai = AI()
         self.enemyList = enemyList
+        self.objName = objName
        
         self.creature = creature
         if creature:
@@ -242,7 +237,7 @@ class GameDraw:
             self.drawTextObject.drawOnSurface(constants.colorBlack)
             i+=1
 
-#class to handle displaying a singular text string to a surface
+#class to handle displaying a singular text string to the game's text log to a surface
 class drawText:
     def __init__(self,surface,text : str, textColour, coords : Tuple[int,int]):
         self.displaySurface = surface
@@ -324,38 +319,38 @@ class Map:
 class GameRunner:
     def __init__(self):
         pygame.init()
-
+        pygame.key.set_repeat(200, 70)
         self.gameMessages = []
         self.ai = AI()
-<<<<<<< HEAD
+        self.ai1 = AI()
         self.playerInv = Container()
-        self.menu = menuPause()
-=======
->>>>>>> 8e923b1... Add menuInventory and textWidh methods
         self.clock = pygame.time.Clock()
         self.surfaceMain = pygame.display.set_mode( (constants.mapWidth*constants.cellWidth,constants.mapHeight*constants.cellHeight) )
         self.fovCalculate = True
+
         self.map = Map(self.fovCalculate, None)
+
         self.playerCreature = Creature("player")
         self.enemyCreature = Creature("GiantEnemyCrab")
-<<<<<<< HEAD
+        self.enemyCreature1 = Creature("Crabby Boi 2")
+
         self.itemCom1 = Item(None, None)
-        self.mainEnemy = Actor(15,15,constants.mainEnemySprite, self.surfaceMain, self.map, [],  self.enemyCreature, self.ai, item = self.itemCom1)
-        self.enemyList = [self.mainEnemy]
-        self.player = Actor(1,1,constants.playerSprite, self.surfaceMain, self.map, self.enemyList, self.playerCreature, None, self.playerInv)
+        self.itemCom2 = Item(None, None)
+        self.mainEnemy = Actor(15,15,constants.mainEnemySprite, self.surfaceMain, self.map, [], "Crab", self.enemyCreature, self.ai, item = self.itemCom1)
+        self.mainEnemy2 = Actor(15,15,constants.mainEnemySprite, self.surfaceMain, self.map, [], "Crab Boi 2", self.enemyCreature1, self.ai1, item = self.itemCom2)
+        self.enemyList = [self.mainEnemy, self.mainEnemy2]
+        
+        self.player = Actor(1,1,constants.playerSprite, self.surfaceMain, self.map, self.enemyList, "Python", self.playerCreature, None, self.playerInv)
+        
+        self.menu = menu(self.surfaceMain, self.player)
+       
         self.GameDrawer = GameDraw(self.surfaceMain,self.player, self.map, self.enemyList, self.clock, self.gameMessages)
         self.mainEnemy.enemyList = [self.player]
+        self.mainEnemy2.enemyList = [self.player]
+
         self.map.player = self.player
         self.itemCom1.player = self.player
-=======
-        self.mainEnemy = Actor(15,15,constants.mainEnemySprite, self.surfaceMain, self.map, [], "crab", self.enemyCreature, self.ai)
-        self.enemyList = [self.mainEnemy]
-        self.player = Actor(1,1,constants.playerSprite, self.surfaceMain, self.map, self.enemyList, "snake" ,self.playerCreature, None)
-        self.GameDrawer = GameDraw(self.surfaceMain,self.player, self.map, self.enemyList, self.clock, self.gameMessages)
-        self.mainEnemy.enemyList = [self.player]
-        self.map.player = self.player
-        self.menu = menu(self.surfaceMain, self.player)
->>>>>>> 4cbbaa8... Minor changes to menu class for inv menu
+        self.itemCom2.player = self.player
     def game_main_loop(self):
  
         gameQuitStatus = False
