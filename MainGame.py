@@ -8,7 +8,7 @@ import constants
 
 #baseclass for an actor. Actor being any object that can interact with a surface
 class Actor:
-    def __init__(self, x, y, sprite, surface, map, enemyList, creature = None, ai = None):
+    def __init__(self, x, y, sprite, surface, map, enemyList, creature = None, ai = None, container = None, item = None):
         self.x = x #map address
         self.y = y # map address
         self.sprite = sprite
@@ -16,12 +16,23 @@ class Actor:
         self.map = map
         self.ai = AI()
         self.enemyList = enemyList
+       
         self.creature = creature
         if creature:
             self.creature.setOwner(self)
+
         self.ai = ai
         if ai:
             self.ai.setOwner(self)
+
+        self.container = container
+        if self.container:
+            self.container.setOwner(self)
+
+        self.item = item
+        if self.item:
+            self.item.setOwner(self)
+
     def draw(self):
         self.surface.blit(self.sprite, ( self.x*constants.cellWidth, self.y*constants.cellHeight ))
     def move(self,dx,dy):
@@ -35,13 +46,15 @@ class Actor:
             if (enemy.x == self.x + dx and enemy.y == self.y + dy):
                 target = enemy
                 break
-        if not tileIsWall and target is None: 
-            self.x += dx
-            self.y += dy
+        if not tileIsWall and target is None:
+                self.x += dx
+                self.y += dy
+        elif(not tileIsWall and target is not None):
+            if target.creature == None:
+                 self.x += dx
+                 self.y += dy
         if target and target.creature is not None:
             gameMessage.append(self.creature.name + " attacks " + target.creature.name + "for 3 damage")
-            print(self.creature.name + " attacks " + target.creature.name + "for 3 damage")
-          #  print(self.creature.name + " attacks " + target.creature.name + "for 3 damage")
             deathMessage = target.creature.takeDamage(3)
             if deathMessage:
                 gameMessage.append(deathMessage)
@@ -64,12 +77,47 @@ class Creature():
 
         if(self.hp <=0):
             return self.owner.ai.deathFunction()
+
 class Item:
-    def __init(self):
-        self.x = 5
+    def __init__(self, owner, player, weight = 0.0, volume = 0.0):
+        self.weight = weight
+        self.baseVolume = volume
+        self.owner = owner
+        self.container = None
+        self.player = player
+    def pickUp(self, nonPlayerList):
+        gameMessages = []
+        if self.player.container:
+            if self.player.container.volume + self.baseVolume > self.player.container.baseVolume:
+                gameMessages = ["Not enough inv space"]
+            else:
+                gameMessages = ["Picking up item"]
+                self.player.container.inventory.append(self.owner)
+                nonPlayerList.remove(self.owner)
+                self.container = self.player.container
+        return gameMessages
+    def drop(self, nonPlayerList):
+        gameMessages = ["Dropping Item"]
+        self.container.inventory.remove(self.owner)
+        self.owner.x = self.player.x
+        self.owner.y = self.player.y
+        nonPlayerList.append(self.owner)
+        return gameMessages
+    
+    def setOwner(self,actor):
+        self.owner = actor
+
 class Container :
-    def __init__(self):
-        self.x = 5
+    def __init__(self, volume = 10.0, inventory = []):
+        self.inventory = inventory
+        self.baseVolume = volume
+        self.owner = None
+        self.currentVolume = 0.0
+    def setOwner(self,owner):
+        self.owner = owner
+    @property
+    def volume(self):
+        return self.currentVolume
 
 #class for an individual tile
 class tileStrucutre:
@@ -77,7 +125,6 @@ class tileStrucutre:
         self.blockPath = blockPath
         self.explored = False
         
-
 #class to handle AI for the enemies
 class AI:
     def __init__(self):
@@ -94,11 +141,11 @@ class AI:
         return gameMessage
 #class to update the game's UI by updating/drawing the screen
 class GameDraw:
-    def __init__(self,surface, actor, map, enemyList, clock, messages):
+    def __init__(self,surface, actor, map, nonPlayerList, clock, messages):
         self.surface = surface
         self.player = actor
         self.map = map
-        self.enemyList = enemyList
+        self.nonPlayerList = nonPlayerList
         self.clock = clock
         self.gameMessages = messages
         self.drawTextObject = drawText(self.surface,"default", constants.colorWhite,(0,0))
@@ -108,10 +155,10 @@ class GameDraw:
 
         self.map.drawToMap(self.surface)
 
-        for enemy in self.enemyList:
-            isVisble = tcod.map_is_in_fov(self.map.FOVMAP,enemy.x, enemy.y)
+        for obj in self.nonPlayerList:
+            isVisble = tcod.map_is_in_fov(self.map.FOVMAP,obj.x, obj.y)
             if isVisble:
-                enemy.draw()
+                obj.draw()
         
         self.player.draw()
         self.drawMessages()
@@ -198,7 +245,6 @@ class Map:
     def makeFOV(self):
             self.FOVMAP = tcod.map_new(constants.mapWidth, constants.mapHeight)
 
-
             for y in range(constants.mapHeight):
                 for x in range(constants.mapWidth):
                     tcod.map_set_properties(self.FOVMAP, x, y, not self.map[x][y].blockPath, not self.map[x][y].blockPath)
@@ -208,24 +254,31 @@ class Map:
             self.fovCalculate = False
             tcod.map_compute_fov(self.FOVMAP, self.player.x, self.player.y, constants.torchRadius, constants.FOVLIGHTWALLS, constants.FOVALGO)
 
+    def map_objects_atcoords(self,coords_x,coords_y, nonPlayerList):
+        objectOptions = [obj for obj in nonPlayerList if obj.x == coords_x and obj.y == coords_y]
+        return objectOptions
 #Main Game class with main game loop
 class GameRunner:
     def __init__(self):
         pygame.init()
+
         self.gameMessages = []
         self.ai = AI()
+        self.playerInv = Container()
         self.clock = pygame.time.Clock()
         self.surfaceMain = pygame.display.set_mode( (constants.mapWidth*constants.cellWidth,constants.mapHeight*constants.cellHeight) )
         self.fovCalculate = True
         self.map = Map(self.fovCalculate, None)
         self.playerCreature = Creature("player")
         self.enemyCreature = Creature("GiantEnemyCrab")
-        self.mainEnemy = Actor(15,15,constants.mainEnemySprite, self.surfaceMain, self.map, [],  self.enemyCreature, self.ai)
+        self.itemCom1 = Item(None, None)
+        self.mainEnemy = Actor(15,15,constants.mainEnemySprite, self.surfaceMain, self.map, [],  self.enemyCreature, self.ai, item = self.itemCom1)
         self.enemyList = [self.mainEnemy]
-        self.player = Actor(1,1,constants.playerSprite, self.surfaceMain, self.map, self.enemyList, self.playerCreature, None)
+        self.player = Actor(1,1,constants.playerSprite, self.surfaceMain, self.map, self.enemyList, self.playerCreature, None, self.playerInv)
         self.GameDrawer = GameDraw(self.surfaceMain,self.player, self.map, self.enemyList, self.clock, self.gameMessages)
         self.mainEnemy.enemyList = [self.player]
         self.map.player = self.player
+        self.itemCom1.player = self.player
     def game_main_loop(self):
  
         gameQuitStatus = False
@@ -286,6 +339,24 @@ class GameRunner:
                             self.gameMessagesAppend(message,constants.colorWhite)
                    self.map.fovCalculate = True
                    return "player-moved"
+                if event.key == pygame.K_g:
+                    #get items at current location
+                    objects_at_player = self.map.map_objects_atcoords(self.player.x, self.player.y, self.GameDrawer.nonPlayerList)
+
+                    for obj in objects_at_player:
+                        if obj.item:
+                           gameMessages = obj.item.pickUp(self.GameDrawer.nonPlayerList)
+                           if gameMessages != []:
+                                for message in gameMessages:
+                                    self.gameMessagesAppend(message,constants.colorWhite)
+                if event.key == pygame.K_d:
+                     if len(self.player.container.inventory) > 0:
+                         gameMessages = self.player.container.inventory[-1].item.drop(self.GameDrawer.nonPlayerList)
+                         if gameMessages != []:
+                                for message in gameMessages:
+                                    self.gameMessagesAppend(message,constants.colorWhite)
+
+
         return "no-action"
 
 #class to start the game. AKin to TicTacToeApplication in Assignment 1 of Software Design
