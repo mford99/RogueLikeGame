@@ -37,6 +37,7 @@ class menu():
 
         menuClose = False
 
+        gameMessages = []
         menuWidth = 200
         menuHeight = 200
         windowsWidth = constants.mapWidth* constants.cellWidth
@@ -70,8 +71,12 @@ class menu():
                     if event.button == 1:
                         if (mouseInWindow and 
                             mouseLineSelection <= len(printList)-1):
-                               self.player.container.inventory[mouseLineSelection].item.drop(self.nonPlayerList)
+                              if(len(gameMessages) > 0):
+                                 gameMessages.append(self.player.container.inventory[mouseLineSelection].item.use(self.nonPlayerList))
+                              else:
+                                 gameMessages = [self.player.container.inventory[mouseLineSelection].item.use(self.nonPlayerList)]
 
+            #draws inventory items on inv menu
             for line , (name) in enumerate(printList):
                 
                 if line == mouseLineSelection and mouseInWindow:
@@ -86,7 +91,7 @@ class menu():
                     drawInv.drawOnSurface()
             self.surface.blit(inventorySurface, ((menuX),(menuY)))
             pygame.display.update()
-
+        return gameMessages
 #baseclass for an actor. Actor being any object that can interact with a surface
 class Actor:
     def __init__(self, x, y, sprite, surface, map, enemyList, objName,creature = None, ai = None, container = None, item = None):
@@ -152,6 +157,7 @@ class Creature():
         self.name = name
         self.hp = hp
         self.owner = None
+        self.maxHp = hp
 
     def setOwner(self, owner):
         self.owner = owner
@@ -160,14 +166,21 @@ class Creature():
 
         if(self.hp <=0):
             return self.owner.ai.deathFunction()
+    def restoreHP(self, value):
+        if(self.hp == self.maxHp):
+            return "cancelled"
+        else:
+            self.hp = min(self.hp+value,self.maxHp)
+            return "success"
 
 class Item:
-    def __init__(self, owner, player, weight = 0.0, volume = 0.0):
+    def __init__(self, owner, player, weight = 0.0, volume = 0.0, healOrDamageVal = 0):
         self.weight = weight
         self.baseVolume = volume
         self.owner = owner
         self.container = None
         self.player = player
+        self.value = healOrDamageVal
     def pickUp(self, nonPlayerList):
         gameMessages = []
         if self.player.container:
@@ -189,6 +202,17 @@ class Item:
     
     def setOwner(self,actor):
         self.owner = actor
+
+    #by default heals the player by eating a corpse
+    # will be overwritten by inherited classes later
+    def use(self, nonPlayerList):
+        useResult = self.player.creature.restoreHP(self.value)
+        if useResult == "cancelled":
+            gameMessages = "Already at full health"
+        else:
+            gameMessages = "Consumsed corpse to heal for: " + str(self.value)
+            self.container.inventory.remove(self.owner)
+        return gameMessages
 
 class Container :
     def __init__(self, volume = 10.0, inventory = []):
@@ -361,8 +385,8 @@ class GameRunner:
         self.enemyCreature = Creature("GiantEnemyCrab")
         self.enemyCreature1 = Creature("Crabby Boi 2")
 
-        self.itemCom1 = Item(None, None)
-        self.itemCom2 = Item(None, None)
+        self.itemCom1 = Item(None, None, healOrDamageVal = 5)
+        self.itemCom2 = Item(None, None, healOrDamageVal=5)
         self.mainEnemy = Actor(15,15,constants.mainEnemySprite, self.surfaceMain, self.map, [], "Crab", self.enemyCreature, self.ai, item = self.itemCom1)
         self.mainEnemy2 = Actor(15,15,constants.mainEnemySprite, self.surfaceMain, self.map, [], "Crab Boi 2", self.enemyCreature1, self.ai1, item = self.itemCom2)
         self.enemyList = [self.mainEnemy, self.mainEnemy2]
@@ -457,7 +481,11 @@ class GameRunner:
                 elif event.key == pygame.K_p:
                     self.menu.menuPause()
                 elif event.key == pygame.K_i:
-                    self.menu.menuInventory()
+                   gameMessages = self.menu.menuInventory()
+                   print(gameMessages)
+                   if gameMessages != []:
+                            for message in gameMessages:
+                                self.gameMessagesAppend(message,constants.colorWhite)
         return "no-action"
 
 #class to start the game. AKin to TicTacToeApplication in Assignment 1 of Software Design
