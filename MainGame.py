@@ -6,16 +6,99 @@ from typing import Tuple
 #game files
 import constants
 
+#class for a menu such as an inventory menu and a menu that pauses the game
+class menu():
+    def __init__(self,surface, player, nonPlayerList):
+        self.surface = surface
+        self.player = player
+        self.nonPlayerList = nonPlayerList
+    def menuPause(self):
+
+        windowsWidth = constants.mapWidth* constants.cellWidth
+        windowsHeight = constants.mapHeight * constants.cellHeight
+        menuText = "PAUSED PRESS P TO UNPAUSE"
+        menuClose = False
+        while not menuClose:
+            eventList = pygame.event.get()
+
+            for event in eventList:
+                if event.type == pygame.KEYDOWN:
+
+                    if event.key == pygame.K_p:
+                        menuClose = True
+
+            drawPauseMessage = drawText(self.surface, menuText, constants.colorWhite, 
+                                       ((windowsWidth) / 2,windowsHeight / 2))
+            drawPauseMessage.coords     = (drawPauseMessage.coords[0]-(drawPauseMessage.textWidth()/2), drawPauseMessage.coords[1]-(drawPauseMessage.textHeight()/2))
+            drawPauseMessage.drawOnSurface(constants.colorBlack)  
+            pygame.display.flip()
+   
+    def menuInventory(self):
+
+        menuClose = False
+
+        menuWidth = 200
+        menuHeight = 200
+        windowsWidth = constants.mapWidth* constants.cellWidth
+        windowsHeight = constants.mapHeight * constants.cellHeight
+        inventorySurface = pygame.Surface((menuWidth,menuHeight))
+
+        menuX = windowsWidth/2 - menuWidth/2
+        menuY = windowsHeight/2-menuHeight/2
+
+
+        while not menuClose:
+            printList = [obj.objName for obj in self.player.container.inventory]
+            drawInv = drawText(inventorySurface, "blah", constants.colorWhite,
+                                   (0,0+1))
+            inventorySurface.fill(constants.colorBlack)
+            
+            mouseX, mouseY = pygame.mouse.get_pos()
+            mouseXRelative = mouseX - menuX
+            mouseYRelative = mouseY - menuY
+
+            mouseLineSelection = int(mouseYRelative / drawInv.textHeight())
+            mouseInWindow = (mouseXRelative > 0 and mouseYRelative > 0) and (mouseXRelative < menuWidth and mouseYRelative < menuHeight)
+
+            eventList = pygame.event.get()
+            for event in eventList:
+                if event.type == pygame.KEYDOWN:
+
+                    if event.key == pygame.K_i:
+                        menuClose = True
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if event.button == 1:
+                        if (mouseInWindow and 
+                            mouseLineSelection <= len(printList)-1):
+                               self.player.container.inventory[mouseLineSelection].item.drop(self.nonPlayerList)
+
+            for line , (name) in enumerate(printList):
+                
+                if line == mouseLineSelection and mouseInWindow:
+                    drawInv = drawText(inventorySurface, name, constants.colorWhite,
+                                   (0,0))
+                    drawInv.coords = (0,0+line*drawInv.textHeight())
+                    drawInv.drawOnSurface(constants.colorGrey)
+                else:
+                    drawInv = drawText(inventorySurface, name, constants.colorWhite,
+                                    (0,0))
+                    drawInv.coords = (0,0+line*drawInv.textHeight())
+                    drawInv.drawOnSurface()
+            self.surface.blit(inventorySurface, ((menuX),(menuY)))
+            pygame.display.update()
+
 #baseclass for an actor. Actor being any object that can interact with a surface
 class Actor:
-    def __init__(self, x, y, sprite, surface, map, enemyList, creature = None, ai = None, container = None, item = None):
+    def __init__(self, x, y, sprite, surface, map, enemyList, objName,creature = None, ai = None, container = None, item = None):
         self.x = x #map address
         self.y = y # map address
+        self.objName = objName
         self.sprite = sprite
         self.surface = surface
         self.map = map
         self.ai = AI()
         self.enemyList = enemyList
+        self.objName = objName
        
         self.creature = creature
         if creature:
@@ -181,7 +264,7 @@ class GameDraw:
             self.drawTextObject.drawOnSurface(constants.colorBlack)
             i+=1
 
-#class to handle displaying a singular text string to the game's text log to a surface
+#class to handle displaying a singular text string to a surface
 class drawText:
     def __init__(self,surface,text : str, textColour, coords : Tuple[int,int]):
         self.displaySurface = surface
@@ -190,7 +273,7 @@ class drawText:
         self.colour = textColour
         self.textSurface = constants.fontMessageText.render(self.message, False, self.colour)
         self.textRect = self.textSurface.get_rect()
-    def drawOnSurface(self, incomingBGColor= None):
+    def drawOnSurface(self, incomingBGColor = None):
         
         if incomingBGColor:
             self.textSurface = constants.fontMessageText.render(self.message, False, self.colour, incomingBGColor)
@@ -202,6 +285,8 @@ class drawText:
         self.displaySurface.blit(self.textSurface, self.textRect)
     def textHeight(self):
         return self.textRect.height
+    def textWidth(self):
+        return self.textRect.width
 
 #class to handle the game's map
 class Map:
@@ -261,24 +346,38 @@ class Map:
 class GameRunner:
     def __init__(self):
         pygame.init()
-
+        pygame.key.set_repeat(200, 70)
         self.gameMessages = []
         self.ai = AI()
+        self.ai1 = AI()
         self.playerInv = Container()
         self.clock = pygame.time.Clock()
         self.surfaceMain = pygame.display.set_mode( (constants.mapWidth*constants.cellWidth,constants.mapHeight*constants.cellHeight) )
         self.fovCalculate = True
+
         self.map = Map(self.fovCalculate, None)
+
         self.playerCreature = Creature("player")
         self.enemyCreature = Creature("GiantEnemyCrab")
+        self.enemyCreature1 = Creature("Crabby Boi 2")
+
         self.itemCom1 = Item(None, None)
-        self.mainEnemy = Actor(15,15,constants.mainEnemySprite, self.surfaceMain, self.map, [],  self.enemyCreature, self.ai, item = self.itemCom1)
-        self.enemyList = [self.mainEnemy]
-        self.player = Actor(1,1,constants.playerSprite, self.surfaceMain, self.map, self.enemyList, self.playerCreature, None, self.playerInv)
+        self.itemCom2 = Item(None, None)
+        self.mainEnemy = Actor(15,15,constants.mainEnemySprite, self.surfaceMain, self.map, [], "Crab", self.enemyCreature, self.ai, item = self.itemCom1)
+        self.mainEnemy2 = Actor(15,15,constants.mainEnemySprite, self.surfaceMain, self.map, [], "Crab Boi 2", self.enemyCreature1, self.ai1, item = self.itemCom2)
+        self.enemyList = [self.mainEnemy, self.mainEnemy2]
+        
+        self.player = Actor(1,1,constants.playerSprite, self.surfaceMain, self.map, self.enemyList, "Python", self.playerCreature, None, self.playerInv)
+        
+        self.menu = menu(self.surfaceMain, self.player, self.enemyList)
+       
         self.GameDrawer = GameDraw(self.surfaceMain,self.player, self.map, self.enemyList, self.clock, self.gameMessages)
         self.mainEnemy.enemyList = [self.player]
+        self.mainEnemy2.enemyList = [self.player]
+
         self.map.player = self.player
         self.itemCom1.player = self.player
+        self.itemCom2.player = self.player
     def game_main_loop(self):
  
         gameQuitStatus = False
@@ -355,8 +454,10 @@ class GameRunner:
                          if gameMessages != []:
                                 for message in gameMessages:
                                     self.gameMessagesAppend(message,constants.colorWhite)
-
-
+                elif event.key == pygame.K_p:
+                    self.menu.menuPause()
+                elif event.key == pygame.K_i:
+                    self.menu.menuInventory()
         return "no-action"
 
 #class to start the game. AKin to TicTacToeApplication in Assignment 1 of Software Design
