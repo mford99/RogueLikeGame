@@ -8,9 +8,10 @@ import constants
 
 #class for a menu such as an inventory menu and a menu that pauses the game
 class menu():
-    def __init__(self,surface, player):
+    def __init__(self,surface, player, nonPlayerList):
         self.surface = surface
         self.player = player
+        self.nonPlayerList = nonPlayerList
     def menuPause(self):
 
         windowsWidth = constants.mapWidth* constants.cellWidth
@@ -42,23 +43,47 @@ class menu():
         windowsHeight = constants.mapHeight * constants.cellHeight
         inventorySurface = pygame.Surface((menuWidth,menuHeight))
 
-        printList = [obj.objName for obj in self.player.container.inventory]
         menuX = windowsWidth/2 - menuWidth/2
         menuY = windowsHeight/2-menuHeight/2
-        while not menuClose:
-            inventorySurface.fill(constants.colorBlack)
-            eventList = pygame.event.get()
 
+
+        while not menuClose:
+            printList = [obj.objName for obj in self.player.container.inventory]
+            drawInv = drawText(inventorySurface, "blah", constants.colorWhite,
+                                   (0,0+1))
+            inventorySurface.fill(constants.colorBlack)
+            
+            mouseX, mouseY = pygame.mouse.get_pos()
+            mouseXRelative = mouseX - menuX
+            mouseYRelative = mouseY - menuY
+
+            mouseLineSelection = int(mouseYRelative / drawInv.textHeight())
+            mouseInWindow = (mouseXRelative > 0 and mouseYRelative > 0) and (mouseXRelative < menuWidth and mouseYRelative < menuHeight)
+
+            eventList = pygame.event.get()
             for event in eventList:
                 if event.type == pygame.KEYDOWN:
 
                     if event.key == pygame.K_i:
                         menuClose = True
-            for i , (name) in enumerate(printList):
-                drawInv = drawText(inventorySurface, name, constants.colorWhite,
-                                   (0,0+i*1))
-                drawInv.coords = (0,0+i*drawInv.textHeight())
-                drawInv.drawOnSurface()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if event.button == 1:
+                        if (mouseInWindow and 
+                            mouseLineSelection <= len(printList)-1):
+                               self.player.container.inventory[mouseLineSelection].item.drop(self.nonPlayerList)
+
+            for line , (name) in enumerate(printList):
+                
+                if line == mouseLineSelection and mouseInWindow:
+                    drawInv = drawText(inventorySurface, name, constants.colorWhite,
+                                   (0,0))
+                    drawInv.coords = (0,0+line*drawInv.textHeight())
+                    drawInv.drawOnSurface(constants.colorGrey)
+                else:
+                    drawInv = drawText(inventorySurface, name, constants.colorWhite,
+                                    (0,0))
+                    drawInv.coords = (0,0+line*drawInv.textHeight())
+                    drawInv.drawOnSurface()
             self.surface.blit(inventorySurface, ((menuX),(menuY)))
             pygame.display.update()
 
@@ -343,7 +368,7 @@ class GameRunner:
         
         self.player = Actor(1,1,constants.playerSprite, self.surfaceMain, self.map, self.enemyList, "Python", self.playerCreature, None, self.playerInv)
         
-        self.menu = menu(self.surfaceMain, self.player)
+        self.menu = menu(self.surfaceMain, self.player, self.enemyList)
        
         self.GameDrawer = GameDraw(self.surfaceMain,self.player, self.map, self.enemyList, self.clock, self.gameMessages)
         self.mainEnemy.enemyList = [self.player]
