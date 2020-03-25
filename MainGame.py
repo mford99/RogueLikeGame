@@ -92,6 +92,7 @@ class Actor:
     def __init__(self, x, y, sprite, surface, map, enemyList, objName,creature = None, ai = None, container = None, item = None):
         self.x = x #map address
         self.y = y # map address
+        self.objName = objName
         self.sprite = sprite
         self.surface = surface
         self.map = map
@@ -263,7 +264,7 @@ class GameDraw:
             self.drawTextObject.drawOnSurface(constants.colorBlack)
             i+=1
 
-#class to handle displaying a singular text string to the game's text log to a surface
+#class to handle displaying a singular text string to a surface
 class drawText:
     def __init__(self,surface,text : str, textColour, coords : Tuple[int,int]):
         self.displaySurface = surface
