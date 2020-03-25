@@ -6,10 +6,15 @@ from typing import Tuple
 #game files
 import constants
 
-#class for a meni such as an inventory menu that pauses the game
+#class for a menu such as an inventory menu and a menu that pauses the game
 class menuPause():
+    def __init__(self,surface):
+        self.surface = surface
     def menuPause(self):
 
+        windowsWidth = constants.mapWidth* constants.cellWidth
+        windowsHeight = constants.mapHeight * constants.cellHeight
+        menuText = "PAUSED PRESS P TO UNPAUSE"
         menuClose = False
         while not menuClose:
             eventList = pygame.event.get()
@@ -19,6 +24,34 @@ class menuPause():
 
                     if event.key == pygame.K_p:
                         menuClose = True
+
+            drawPauseMessage = drawText(self.surface, menuText, constants.colorWhite, 
+                                       ((windowsWidth) / 2,windowsHeight / 2))
+            drawPauseMessage.coords     = (drawPauseMessage.coords[0]-(drawPauseMessage.textWidth()/2), drawPauseMessage.coords[1]-(drawPauseMessage.textHeight()/2))
+            drawPauseMessage.drawOnSurface(constants.colorBlack)  
+            pygame.display.flip()
+   
+    def menuInventory(self):
+
+        menuClose = False
+
+        menuWidth = 200
+        menuHeight = 200
+        windowsWidth = constants.mapWidth* constants.cellWidth
+        windowsHeight = constants.mapHeight * constants.cellHeight
+        inventorySurface = pygame.Surface((menuWidth,menuHeight))
+
+        while not menuClose:
+            inventorySurface.fill(constants.colorBlack)
+            eventList = pygame.event.get()
+
+            for event in eventList:
+                if event.type == pygame.KEYDOWN:
+
+                    if event.key == pygame.K_i:
+                        menuClose = True
+            self.surface.blit(inventorySurface, ((windowsWidth/2 - menuWidth/2),(windowsHeight/2-menuHeight/2)))
+            pygame.display.update()
 
 
 #baseclass for an actor. Actor being any object that can interact with a surface
@@ -217,6 +250,8 @@ class drawText:
         self.displaySurface.blit(self.textSurface, self.textRect)
     def textHeight(self):
         return self.textRect.height
+    def textWidth(self):
+        return self.textRect.width
 
 #class to handle the game's map
 class Map:
@@ -279,10 +314,14 @@ class GameRunner:
 
         self.gameMessages = []
         self.ai = AI()
+<<<<<<< HEAD
         self.playerInv = Container()
         self.menu = menuPause()
+=======
+>>>>>>> 8e923b1... Add menuInventory and textWidh methods
         self.clock = pygame.time.Clock()
         self.surfaceMain = pygame.display.set_mode( (constants.mapWidth*constants.cellWidth,constants.mapHeight*constants.cellHeight) )
+        self.menu = menuPause(self.surfaceMain)
         self.fovCalculate = True
         self.map = Map(self.fovCalculate, None)
         self.playerCreature = Creature("player")
@@ -373,6 +412,8 @@ class GameRunner:
                                     self.gameMessagesAppend(message,constants.colorWhite)
                 elif event.key == pygame.K_p:
                     self.menu.menuPause()
+                elif event.key == pygame.K_i:
+                    self.menu.menuInventory()
         return "no-action"
 
 #class to start the game. AKin to TicTacToeApplication in Assignment 1 of Software Design
