@@ -482,7 +482,6 @@ class GameRunner:
                     self.menu.menuPause()
                 elif event.key == pygame.K_i:
                    gameMessages = self.menu.menuInventory()
-                   print(gameMessages)
                    if gameMessages != []:
                             for message in gameMessages:
                                 self.gameMessagesAppend(message,constants.colorWhite)
