@@ -92,6 +92,50 @@ class menu():
             self.surface.blit(inventorySurface, ((menuX),(menuY)))
             pygame.display.update()
         return gameMessages
+            
+class targetselect:
+    def __init__(self,surface, actor, map, nonPlayerList, clock,gameDraw):
+        self.surface = surface
+        self.player = actor
+        self.map = map
+        self.nonPlayerList = nonPlayerList
+        self.clock = clock
+        self.gameDraw = gameDraw
+
+    def menu_target_select(self):
+        menuClose = False
+        while not menuClose:
+            #get mouse position
+            
+            #get button clicks
+
+            #draw game
+            #self.surface.fill(constants.colorDefaultBG)
+
+            #self.map.drawToMap(self.surface)
+
+            #for obj in self.nonPlayerList:
+            #    isVisble = tcod.map_is_in_fov(self.map.FOVMAP,obj.x, obj.y)
+             #   if isVisble:
+             #       obj.draw()
+        
+            #self.player.draw()
+
+            #self.gameDraw.drawGame()
+
+            self.draw_tile_rect((64,64))
+            pygame.display.flip()
+            self.clock.tick(constants.gameFPS)
+
+    def draw_tile_rect(self,coords):
+        new_surface = pygame.Surface((constants.cellWidth,constants.cellHeight))
+        new_surface.fill(constants.colorWhite)
+        new_surface.set_alpha(150)
+        self.surface.blit(new_surface,coords)
+        
+        
+
+
 #baseclass for an actor. Actor being any object that can interact with a surface
 class Actor:
     def __init__(self, x, y, sprite, surface, map, enemyList, objName,creature = None, ai = None, container = None, item = None):
@@ -149,6 +193,7 @@ class Actor:
         return gameMessage
     def getai(self):
         return self.ai
+
 
 #classes for creatures, containers, and items
 
@@ -270,7 +315,7 @@ class GameDraw:
         self.player.draw()
         self.drawMessages()
 
-        pygame.display.flip()
+        
     def drawMessages(self):
         toDraw = []
         if len(self.gameMessages) <= constants.numMessages:
@@ -287,6 +332,7 @@ class GameDraw:
             self.drawTextObject.coords = (0, startY + (i*self.drawTextObject.textHeight()))
             self.drawTextObject.drawOnSurface(constants.colorBlack)
             i+=1
+
 
 #class to handle displaying a singular text string to a surface
 class drawText:
@@ -421,6 +467,7 @@ class GameRunner:
                                 self.gameMessagesAppend(message,constants.colorWhite)
             self.GameDrawer.drawGame()
             self.clock.tick(constants.gameFPS)
+            pygame.display.flip()
         pygame.quit()
         exit()
 
@@ -485,6 +532,10 @@ class GameRunner:
                    if gameMessages != []:
                             for message in gameMessages:
                                 self.gameMessagesAppend(message,constants.colorWhite)
+                elif event.key == pygame.K_q:
+                    target = targetselect(self.surfaceMain, self.player, self.map, self.enemyList, self.clock, self.GameDrawer)
+                    target.menu_target_select()
+                    
         return "no-action"
 
 #class to start the game. AKin to TicTacToeApplication in Assignment 1 of Software Design
