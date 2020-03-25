@@ -7,9 +7,10 @@ from typing import Tuple
 import constants
 
 #class for a menu such as an inventory menu and a menu that pauses the game
-class menuPause():
-    def __init__(self,surface):
+class menu():
+    def __init__(self,surface, player):
         self.surface = surface
+        self.player = player
     def menuPause(self):
 
         windowsWidth = constants.mapWidth* constants.cellWidth
@@ -41,6 +42,8 @@ class menuPause():
         windowsHeight = constants.mapHeight * constants.cellHeight
         inventorySurface = pygame.Surface((menuWidth,menuHeight))
 
+        printList = [obj.objName for obj in self.player.container.inventory]
+
         while not menuClose:
             inventorySurface.fill(constants.colorBlack)
             eventList = pygame.event.get()
@@ -50,15 +53,25 @@ class menuPause():
 
                     if event.key == pygame.K_i:
                         menuClose = True
+            for i, (name) in enumerate(printList):
+                drawInvText = drawText(inventorySurface,name,constants.colorWhite,
+                (0, 0+ i*1))
+                drawInvText.coords = (0, 0+i*drawInvText.textHeight())
+                drawInvText.drawOnSurface(constants.colorBlack)
             self.surface.blit(inventorySurface, ((windowsWidth/2 - menuWidth/2),(windowsHeight/2-menuHeight/2)))
             pygame.display.update()
 
 
-#baseclass for an actor. Actor being any object that can interact with a surface
+#baseclass for an actor. Actor being any object that can interact with or be put on a surface
 class Actor:
+<<<<<<< HEAD
     def __init__(self, x, y, sprite, surface, map, enemyList, creature = None, ai = None, container = None, item = None):
+=======
+    def __init__(self, x, y, sprite, surface, map, enemyList, objName, creature = None, ai = None):
+>>>>>>> 4cbbaa8... Minor changes to menu class for inv menu
         self.x = x #map address
         self.y = y # map address
+        self.objName = objName
         self.sprite = sprite
         self.surface = surface
         self.map = map
@@ -229,7 +242,7 @@ class GameDraw:
             self.drawTextObject.drawOnSurface(constants.colorBlack)
             i+=1
 
-#class to handle displaying a singular text string to the game's text log to a surface
+#class to handle displaying a singular text string to a surface
 class drawText:
     def __init__(self,surface,text : str, textColour, coords : Tuple[int,int]):
         self.displaySurface = surface
@@ -321,11 +334,11 @@ class GameRunner:
 >>>>>>> 8e923b1... Add menuInventory and textWidh methods
         self.clock = pygame.time.Clock()
         self.surfaceMain = pygame.display.set_mode( (constants.mapWidth*constants.cellWidth,constants.mapHeight*constants.cellHeight) )
-        self.menu = menuPause(self.surfaceMain)
         self.fovCalculate = True
         self.map = Map(self.fovCalculate, None)
         self.playerCreature = Creature("player")
         self.enemyCreature = Creature("GiantEnemyCrab")
+<<<<<<< HEAD
         self.itemCom1 = Item(None, None)
         self.mainEnemy = Actor(15,15,constants.mainEnemySprite, self.surfaceMain, self.map, [],  self.enemyCreature, self.ai, item = self.itemCom1)
         self.enemyList = [self.mainEnemy]
@@ -334,6 +347,15 @@ class GameRunner:
         self.mainEnemy.enemyList = [self.player]
         self.map.player = self.player
         self.itemCom1.player = self.player
+=======
+        self.mainEnemy = Actor(15,15,constants.mainEnemySprite, self.surfaceMain, self.map, [], "crab", self.enemyCreature, self.ai)
+        self.enemyList = [self.mainEnemy]
+        self.player = Actor(1,1,constants.playerSprite, self.surfaceMain, self.map, self.enemyList, "snake" ,self.playerCreature, None)
+        self.GameDrawer = GameDraw(self.surfaceMain,self.player, self.map, self.enemyList, self.clock, self.gameMessages)
+        self.mainEnemy.enemyList = [self.player]
+        self.map.player = self.player
+        self.menu = menu(self.surfaceMain, self.player)
+>>>>>>> 4cbbaa8... Minor changes to menu class for inv menu
     def game_main_loop(self):
  
         gameQuitStatus = False
