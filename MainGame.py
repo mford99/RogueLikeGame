@@ -245,13 +245,13 @@ class Actor:
         if target and target.creature is not None:
             if(self.objName != "Player"):
                 if(target.objName == "Player"):
-                    gameMessage.append(self.displayName + " attacks " + target.displayName + " for 3 damage")
-                    deathMessage = target.creature.takeDamage(3)
+                    gameMessage.append(self.displayName + " attacks " + target.displayName + " for " + str(self.creature.power) + " damage")
+                    deathMessage = self.creature.attack(target)
                     if deathMessage:
                         gameMessage.append(deathMessage)
             else:
-                gameMessage.append(self.displayName + " attacks " + target.displayName + " for 3 damage")
-                deathMessage = target.creature.takeDamage(3)
+                gameMessage.append(self.displayName + " attacks " + target.displayName + " for " + str(self.creature.power) + " damage")
+                deathMessage = self.creature.attack(target)
                 if deathMessage:
                     gameMessage.append(deathMessage)
         return gameMessage
@@ -291,20 +291,41 @@ class Actor:
 
 
 #class for creatures which are controlled by actors
-class Creature():
-    def __init__(self, name, hp = 10):
+class Creature:
+    def __init__(self, name, hp = 10, baseAtck = 2, baseDef = 0):
         self.name = name
         self.hp = hp
         self.owner = None
         self.maxHp = hp
+        self.baseAtck = baseAtck
+        self.baseDef = baseDef
+        self.currentAtck = baseAtck
+        self.currentDef = baseDef
 
     def setOwner(self, owner):
         self.owner = owner
     def takeDamage(self, damage):
-        self.hp -= damage
+        self.hp = self.hp -(damage + self.defense)
 
         if(self.hp <=0):
             return self.owner.ai.deathFunction()
+    def attack(self, target):
+        return target.creature.takeDamage(self.power)
+    @property 
+    def power(self):
+        totalPower = self.baseAtck
+
+        if self.owner.container:
+            objectBonuses = [obj.equipment.attackBonus for obj in self.owner.container.equippedItems]
+
+            for bonus in objectBonuses:
+                totalPower += bonus
+        return totalPower
+    
+    @property 
+    def defense(self):
+        return self.baseDef
+    
     def restoreHP(self, value):
         if(self.hp == self.maxHp):
             return "cancelled"
@@ -370,7 +391,8 @@ class Item:
 
                 for target in targets:
                     gameMessages.append("lightning spell did " + str(value) + " damage to " + target.displayName)
-                    target.creature.takeDamage(value)
+                    if target.creature:
+                        target.creature.takeDamage(value)
         return gameMessages
     
     def confusionSpell(self, numTurns, nonPlayerList):
@@ -394,7 +416,7 @@ class Item:
 
 class Equipment:
 
-    def __init__(self, player, attackBonus, defenseBonus, slot):
+    def __init__(self, player, attackBonus , defenseBonus , slot):
         self.attackBonus = attackBonus
         self.defenseBonus = defenseBonus
         self.slot = slot
@@ -456,6 +478,9 @@ class Container :
     @property
     def volume(self):
         return self.currentVolume
+    @property
+    def equippedItems(self):
+        return [obj for obj in self.inventory if isinstance(obj, Equipment) and obj.equipment.equipped]
 
 #class for an individual tile on the map
 class tileStrucutre:
@@ -681,7 +706,7 @@ class GameRunner:
         self.itemCom1 = Item(None, None, healOrDamageVal = 5)
         self.itemCom2 = Item(None, None, healOrDamageVal = 5)
         self.testItem = Item(None, None)
-        self.testSword = Equipment(None, 1, 0, None)
+        self.testSword = Equipment(None, 2, 0, None)
 
         self.Sword = Actor(3,3, constants.swordSprite, self.surfaceMain, self.map, [], "Short Sword", equipment=self.testSword)
         self.mainEnemy = Actor(15,15,constants.mainEnemySprite, self.surfaceMain, self.map, [], "Crab", self.enemyCreature, self.ai, item = self.itemCom1)
