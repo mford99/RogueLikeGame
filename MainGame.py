@@ -102,7 +102,7 @@ class targetselect:
         self.map = map
         self.nonPlayerList = nonPlayerList
 
-    def menu_target_select(self, coordsOrigin = None, maxRange = None, penetrateWalls = True):
+    def menu_target_select(self, coordsOrigin = None, maxRange = None, penetrateWalls = True, mark = None):
         menuClose = False
         while not menuClose:
             #get mouse position
@@ -147,21 +147,33 @@ class targetselect:
                 isVisble = tcod.map_is_in_fov(self.map.FOVMAP,obj.x, obj.y)
                 if isVisble:
                  obj.draw()
-        
+
+            center = False
+            if mark:
+                center = True
+
+            #may need to change later for firespell and lighting spell
             self.player.draw()
             for coords in validListTiles:
                 x,y = coords
-                self.draw_tile_rect((x,y))
+                if coords == validListTiles[-1]:
+                    self.draw_tile_rect((x,y), mark, center)
+                else:
+                     self.draw_tile_rect((x,y))
             pygame.display.flip()
            # self.clock.tick(constants.gameFPS)
 
-    def draw_tile_rect(self,coords):
+    def draw_tile_rect(self,coords, mark = None, center = False):
         x,y= coords
         new_x = x*constants.cellWidth
         new_y = y*constants.cellHeight
         new_surface = pygame.Surface((constants.cellWidth,constants.cellHeight))
         new_surface.fill(constants.colorWhite)
         new_surface.set_alpha(200)
+        if mark:
+            drawX = drawText(new_surface, mark, constants.colorRed, (constants.cellWidth/2,constants.cellHeight/2))
+            drawX.drawOnSurface(incomingFont=constants.fontCursorText, center=center)
+            
         self.surface.blit(new_surface,(new_x,new_y))
         
         
@@ -302,7 +314,8 @@ class Item:
         self.owner = actor
 
     #by default heals the player by eating a corpse
-    # will be overwritten by inherited classes later
+    # will call different methods depending on 
+    # what the actor's name is. TO BE FINSIHED
     def use(self, nonPlayerList):
         useResult = self.player.creature.restoreHP(self.value)
         if useResult == "cancelled":
@@ -315,7 +328,7 @@ class Item:
     def lightingSpell(self, value, nonPlayerList):
         
         targetSelection = targetselect(self.player.surface, self.player, self.player.map, nonPlayerList)
-        pointSelected = targetSelection.menu_target_select((self.player.x, self.player.y),5,False)
+        pointSelected = targetSelection.menu_target_select((self.player.x, self.player.y),5,False, mark="X")
         listOfTiles = []
         gameMessages = []
         if pointSelected:
@@ -329,10 +342,10 @@ class Item:
                     target.creature.takeDamage(value)
         return gameMessages
     
-    def confusionSpell(self,nonPlayerList, numTurns = 4):
+    def confusionSpell(self, numTurns, nonPlayerList):
 
         targetSelection = targetselect(self.player.surface, self.player, self.player.map, nonPlayerList)
-        pointSelected = targetSelection.menu_target_select()
+        pointSelected = targetSelection.menu_target_select(mark="X")
 
         gameMessage = []
         if pointSelected:
@@ -347,8 +360,6 @@ class Item:
 
                 gameMessage = ["The creature's eyes glaze over"]
         return gameMessage
-
-
 
 #class for  a container. I.e just a list that is connected to a certain actor
 class Container :
@@ -462,15 +473,24 @@ class drawText:
         self.colour = textColour
         self.textSurface = constants.fontMessageText.render(self.message, False, self.colour)
         self.textRect = self.textSurface.get_rect()
-    def drawOnSurface(self, incomingBGColor = None):
+    def drawOnSurface(self, incomingBGColor = None, incomingFont = None, center = False):
         
-        if incomingBGColor:
-            self.textSurface = constants.fontMessageText.render(self.message, False, self.colour, incomingBGColor)
+        if incomingFont:
+            if incomingBGColor:
+                self.textSurface = incomingFont.render(self.message, False, self.colour, incomingBGColor)
+            else:
+                self.textSurface = incomingFont.render(self.message, False, self.colour)
         else:
-             self.textSurface = constants.fontMessageText.render(self.message, False, self.colour)
+            if incomingBGColor:
+                self.textSurface = constants.fontMessageText.render(self.message, False, self.colour, incomingBGColor)
+            else:
+                self.textSurface = constants.fontMessageText.render(self.message, False, self.colour)
         self.textRect = self.textSurface.get_rect()
 
-        self.textRect.topleft = self.coords
+        if center == False:
+            self.textRect.topleft = self.coords
+        else:
+            self.textRect.center = self.coords
         self.displaySurface.blit(self.textSurface, self.textRect)
     def textHeight(self):
         return self.textRect.height
@@ -555,7 +575,6 @@ class Map:
             calcX, calcY = tcod.line_step()
     def checkForWall(self, x, y):
         return self.map[x][y].blockPath
-
 
 #Main Game class with main game loop
 class GameRunner:
@@ -679,11 +698,7 @@ class GameRunner:
                             for message in gameMessages:
                                 self.gameMessagesAppend(message,constants.colorWhite)
                 elif event.key == pygame.K_q:
-                   # target = targetselect(self.surfaceMain, self.player, self.map, self.enemyList, self.clock, self.GameDrawer)
-                    #targetcoords = str(target.menu_target_select())
-                    #if targetcoords != None:
-                    #   self.gameMessagesAppend(targetcoords,constants.colorWhite)
-                    gameMessages = self.testitem.confusionSpell(self.GameDrawer.nonPlayerList, 3)
+                    gameMessages = self.testitem.confusionSpell(3, self.GameDrawer.nonPlayerList)
                     if gameMessages != []:
                             for message in gameMessages:
                                 self.gameMessagesAppend(message,constants.colorWhite)

@@ -38,6 +38,7 @@ torchRadius = 10
 #Fonts
 fontDebugMessage = pygame.font.Font('C:/ENGI5895SoftwareDesign/Project/Sprites/Characters/joystix.ttf', 16)
 fontMessageText = pygame.font.Font('C:/ENGI5895SoftwareDesign/Project/Sprites/Characters/joystix.ttf', 12)
+fontCursorText = pygame.font.Font('C:/ENGI5895SoftwareDesign/Project/Sprites/Characters/joystix.ttf', cellHeight)
 #FPS
 gameFPS = 60
 
