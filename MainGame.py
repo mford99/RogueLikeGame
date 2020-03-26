@@ -106,32 +106,45 @@ class targetselect:
         menuClose = False
         while not menuClose:
             #get mouse position
-            
+            mouse_x, mouse_y = pygame.mouse.get_pos()
             #get button clicks
+            events_list = pygame.event.get()
+            
+            mouse_x_rel = mouse_x//constants.cellWidth
+            mouse_y_rel = mouse_y//constants.cellHeight
 
-            #draw game
-            #self.surface.fill(constants.colorDefaultBG)
+            for event in events_list:
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_q:
+                        menu_close = True
 
-            #self.map.drawToMap(self.surface)
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if event.button ==1:
+                        return (mouse_x_rel, mouse_y_rel)
+            
+                
+            self.surface.fill(constants.colorDefaultBG)
 
-            #for obj in self.nonPlayerList:
-            #    isVisble = tcod.map_is_in_fov(self.map.FOVMAP,obj.x, obj.y)
-             #   if isVisble:
-             #       obj.draw()
+            self.map.drawToMap(self.surface)
+
+            for obj in self.nonPlayerList:
+                isVisble = tcod.map_is_in_fov(self.map.FOVMAP,obj.x, obj.y)
+                if isVisble:
+                 obj.draw()
         
-            #self.player.draw()
-
-            #self.gameDraw.drawGame()
-
-            self.draw_tile_rect((64,64))
+            self.player.draw()
+            self.draw_tile_rect((mouse_x_rel,mouse_y_rel))
             pygame.display.flip()
             self.clock.tick(constants.gameFPS)
 
     def draw_tile_rect(self,coords):
+        x,y= coords
+        new_x = x*constants.cellWidth
+        new_y = y*constants.cellHeight
         new_surface = pygame.Surface((constants.cellWidth,constants.cellHeight))
         new_surface.fill(constants.colorWhite)
-        new_surface.set_alpha(150)
-        self.surface.blit(new_surface,coords)
+        new_surface.set_alpha(200)
+        self.surface.blit(new_surface,(new_x,new_y))
         
         
 
@@ -534,7 +547,9 @@ class GameRunner:
                                 self.gameMessagesAppend(message,constants.colorWhite)
                 elif event.key == pygame.K_q:
                     target = targetselect(self.surfaceMain, self.player, self.map, self.enemyList, self.clock, self.GameDrawer)
-                    target.menu_target_select()
+                    targetcoords = str(target.menu_target_select())
+                    if targetcoords != None:
+                        self.gameMessagesAppend(targetcoords,constants.colorWhite)
                     
         return "no-action"
 
