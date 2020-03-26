@@ -44,3 +44,6 @@ gameFPS = 60
 
 #Messages
 numMessages = 4
+
+#Equipment/Items
+swordSprite = pygame.transform.scale(pygame.image.load('C:/ENGI5895SoftwareDesign/Project/Sprites/Characters/Sword.png'), (cellWidth,cellHeight))
