@@ -92,7 +92,8 @@ class menu():
             self.surface.blit(inventorySurface, ((menuX),(menuY)))
             pygame.display.update()
         return gameMessages
-            
+
+#class for selecting a target on the screen       
 class targetselect:
     def __init__(self,surface, actor, map, nonPlayerList, clock,gameDraw):
         self.surface = surface
@@ -102,7 +103,7 @@ class targetselect:
         self.clock = clock
         self.gameDraw = gameDraw
 
-    def menu_target_select(self):
+    def menu_target_select(self, coordsOrigin = None, maxRange = None, penetrateWalls = True):
         menuClose = False
         while not menuClose:
             #get mouse position
@@ -113,14 +114,30 @@ class targetselect:
             mouse_x_rel = mouse_x//constants.cellWidth
             mouse_y_rel = mouse_y//constants.cellHeight
 
+            fullListTiles = []
+            validListTiles = []
+            if coordsOrigin:
+                fullListTiles = self.map.mapLineCreate(coordsOrigin, (mouse_x_rel,mouse_y_rel))
+
+                for i, coords in enumerate(fullListTiles):
+                    x,y = coords
+                    validListTiles.append((x,y))
+                    if maxRange and i == maxRange-1:
+                         break
+                    if not penetrateWalls and (self.map.checkForWall(x,y)):
+                        break
+
+            else:
+                validListTiles = [(mouse_x_rel,mouse_y_rel)]
+
             for event in events_list:
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_q:
-                        menu_close = True
+                        menuClose = True
 
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if event.button ==1:
-                        return (mouse_x_rel, mouse_y_rel)
+                        return validListTiles[-1]
             
                 
             self.surface.fill(constants.colorDefaultBG)
@@ -133,9 +150,11 @@ class targetselect:
                  obj.draw()
         
             self.player.draw()
-            self.draw_tile_rect((mouse_x_rel,mouse_y_rel))
+            for coords in validListTiles:
+                x,y = coords
+                self.draw_tile_rect((x,y))
             pygame.display.flip()
-            self.clock.tick(constants.gameFPS)
+           # self.clock.tick(constants.gameFPS)
 
     def draw_tile_rect(self,coords):
         x,y= coords
@@ -147,8 +166,6 @@ class targetselect:
         self.surface.blit(new_surface,(new_x,new_y))
         
         
-
-
 #baseclass for an actor. Actor being any object that can interact with a surface
 class Actor:
     def __init__(self, x, y, sprite, surface, map, enemyList, objName,creature = None, ai = None, container = None, item = None):
@@ -272,6 +289,22 @@ class Item:
             self.container.inventory.remove(self.owner)
         return gameMessages
 
+    def lightingSpell(self, value, nonPlayerList):
+        
+        targetSelection = targetselect(self.player.surface, self.player, self.player.map, nonPlayerList, None, None )
+        pointSelected = targetSelection.menu_target_select((self.player.x, self.player.y),5,False)
+        listOfTiles = []
+        gameMessages = []
+        if pointSelected:
+            listOfTiles = self.player.map.mapLineCreate((self.player.x, self.player.y), pointSelected)
+            for coords in listOfTiles:
+                x,y = coords
+                targets = self.player.map.map_objects_atcoords(x,y, nonPlayerList)
+
+                for target in targets:
+                    gameMessages.append("lightning spell did " + str(value) + " damage to " + target.creature.name)
+                    target.creature.takeDamage(value)
+        return gameMessages
 class Container :
     def __init__(self, volume = 10.0, inventory = []):
         self.inventory = inventory
@@ -283,6 +316,7 @@ class Container :
     @property
     def volume(self):
         return self.currentVolume
+
 
 #class for an individual tile
 class tileStrucutre:
@@ -425,6 +459,31 @@ class Map:
     def map_objects_atcoords(self,coords_x,coords_y, nonPlayerList):
         objectOptions = [obj for obj in nonPlayerList if obj.x == coords_x and obj.y == coords_y]
         return objectOptions
+    
+    def mapLineCreate(self, coords1, coords2):
+
+        x1, y1 = coords1
+        x2, y2 = coords2
+
+        tcod.line_init(x1, y1, x2, y2)
+
+        calcX, calcY = tcod.line_step()
+
+        coordList = []
+
+        if x1==x2 and y1 == y2:
+            return [(x1,y1)]
+        
+        while(not calcX is None):
+            coordList.append((calcX,calcY))
+
+            if calcX == x2 and calcY == y2:
+                return coordList
+            calcX, calcY = tcod.line_step()
+    def checkForWall(self, x, y):
+        return self.map[x][y].blockPath
+
+
 #Main Game class with main game loop
 class GameRunner:
     def __init__(self):
@@ -446,12 +505,12 @@ class GameRunner:
 
         self.itemCom1 = Item(None, None, healOrDamageVal = 5)
         self.itemCom2 = Item(None, None, healOrDamageVal=5)
+        self.testitem = Item(None, None)
         self.mainEnemy = Actor(15,15,constants.mainEnemySprite, self.surfaceMain, self.map, [], "Crab", self.enemyCreature, self.ai, item = self.itemCom1)
         self.mainEnemy2 = Actor(15,15,constants.mainEnemySprite, self.surfaceMain, self.map, [], "Crab Boi 2", self.enemyCreature1, self.ai1, item = self.itemCom2)
         self.enemyList = [self.mainEnemy, self.mainEnemy2]
         
         self.player = Actor(1,1,constants.playerSprite, self.surfaceMain, self.map, self.enemyList, "Python", self.playerCreature, None, self.playerInv)
-        
         self.menu = menu(self.surfaceMain, self.player, self.enemyList)
        
         self.GameDrawer = GameDraw(self.surfaceMain,self.player, self.map, self.enemyList, self.clock, self.gameMessages)
@@ -461,6 +520,7 @@ class GameRunner:
         self.map.player = self.player
         self.itemCom1.player = self.player
         self.itemCom2.player = self.player
+        self.testitem.player = self.player
     def game_main_loop(self):
  
         gameQuitStatus = False
@@ -546,10 +606,15 @@ class GameRunner:
                             for message in gameMessages:
                                 self.gameMessagesAppend(message,constants.colorWhite)
                 elif event.key == pygame.K_q:
-                    target = targetselect(self.surfaceMain, self.player, self.map, self.enemyList, self.clock, self.GameDrawer)
-                    targetcoords = str(target.menu_target_select())
-                    if targetcoords != None:
-                        self.gameMessagesAppend(targetcoords,constants.colorWhite)
+                   # target = targetselect(self.surfaceMain, self.player, self.map, self.enemyList, self.clock, self.GameDrawer)
+                    #targetcoords = str(target.menu_target_select())
+                    #if targetcoords != None:
+                    #   self.gameMessagesAppend(targetcoords,constants.colorWhite)
+                    gameMessages = self.testitem.lightingSpell(10,self.GameDrawer.nonPlayerList)
+                    if gameMessages != []:
+                            for message in gameMessages:
+                                self.gameMessagesAppend(message,constants.colorWhite)
+
                     
         return "no-action"
 
