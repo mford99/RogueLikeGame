@@ -17,6 +17,7 @@ colorBlack = (0,0,0)
 colorWhite = (255,255,255)
 colorGrey = (100,100,100)
 colorRed = (255,0,0)
+colorGreen = (0,255,0)
 
 #Game Colours
 colorDefaultBG = colorGrey

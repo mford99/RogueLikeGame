@@ -1,6 +1,7 @@
 #third party libraries
 import pygame
 import tcod
+import math
 from typing import Tuple
 
 #game files
@@ -95,13 +96,11 @@ class menu():
 
 #class for selecting a target on the screen       
 class targetselect:
-    def __init__(self,surface, actor, map, nonPlayerList, clock,gameDraw):
+    def __init__(self,surface, actor, map, nonPlayerList):
         self.surface = surface
         self.player = actor
         self.map = map
         self.nonPlayerList = nonPlayerList
-        self.clock = clock
-        self.gameDraw = gameDraw
 
     def menu_target_select(self, coordsOrigin = None, maxRange = None, penetrateWalls = True):
         menuClose = False
@@ -216,17 +215,40 @@ class Actor:
                  self.x += dx
                  self.y += dy
         if target and target.creature is not None:
-            gameMessage.append(self.creature.name + " attacks " + target.creature.name + "for 3 damage")
-            deathMessage = target.creature.takeDamage(3)
-            if deathMessage:
-                gameMessage.append(deathMessage)
+            if(self.objName != "Player"):
+                if(target.objName == "Player"):
+                    gameMessage.append(self.creature.name + " attacks " + target.creature.name + "for 3 damage")
+                    deathMessage = target.creature.takeDamage(3)
+                    if deathMessage:
+                        gameMessage.append(deathMessage)
+            else:
+                gameMessage.append(self.creature.name + " attacks " + target.creature.name + "for 3 damage")
+                deathMessage = target.creature.takeDamage(3)
+                if deathMessage:
+                    gameMessage.append(deathMessage)
         return gameMessage
     def getai(self):
         return self.ai
+    
+    def distanceTo(self, other):
+        dx = other.x - self.x
+        dy = other.y - self.y
+
+        return math.sqrt(dx**2 + dy**2)
+
+    def moveTowards(self, other):
+        dx = other.x - self.x
+        dy = other.y - self.y
+
+        distance = math.sqrt(dx**2 + dy**2)
+
+        dx = int(round(dx/distance))
+        dy = int(round(dy/distance))
+
+        return self.move(dx,dy)
 
 
-#classes for creatures, containers, and items
-
+#class for creatures which are controlled by actors
 class Creature():
     def __init__(self, name, hp = 10):
         self.name = name
@@ -248,6 +270,7 @@ class Creature():
             self.hp = min(self.hp+value,self.maxHp)
             return "success"
 
+#class for items. Item class contains different methods depending on what spells are in the game
 class Item:
     def __init__(self, owner, player, weight = 0.0, volume = 0.0, healOrDamageVal = 0):
         self.weight = weight
@@ -291,7 +314,7 @@ class Item:
 
     def lightingSpell(self, value, nonPlayerList):
         
-        targetSelection = targetselect(self.player.surface, self.player, self.player.map, nonPlayerList, None, None )
+        targetSelection = targetselect(self.player.surface, self.player, self.player.map, nonPlayerList)
         pointSelected = targetSelection.menu_target_select((self.player.x, self.player.y),5,False)
         listOfTiles = []
         gameMessages = []
@@ -305,6 +328,29 @@ class Item:
                     gameMessages.append("lightning spell did " + str(value) + " damage to " + target.creature.name)
                     target.creature.takeDamage(value)
         return gameMessages
+    
+    def confusionSpell(self,nonPlayerList, numTurns = 4):
+
+        targetSelection = targetselect(self.player.surface, self.player, self.player.map, nonPlayerList)
+        pointSelected = targetSelection.menu_target_select()
+
+        gameMessage = []
+        if pointSelected:
+            tileX, tileY = pointSelected
+            targets = self.player.map.map_objects_atcoords(tileX, tileY, nonPlayerList)
+
+            for target in targets:
+                oldAI = target.ai
+
+                target.ai = AIConfuse(oldAI, numTurns)
+                target.ai.owner = target
+
+                gameMessage = ["The creature's eyes glaze over"]
+        return gameMessage
+
+
+
+#class for  a container. I.e just a list that is connected to a certain actor
 class Container :
     def __init__(self, volume = 10.0, inventory = []):
         self.inventory = inventory
@@ -317,8 +363,7 @@ class Container :
     def volume(self):
         return self.currentVolume
 
-
-#class for an individual tile
+#class for an individual tile on the map
 class tileStrucutre:
     def __init__(self, blockPath):
         self.blockPath = blockPath
@@ -338,6 +383,33 @@ class AI:
         self.owner.creature = None
         self.owner.ai = None
         return gameMessage
+
+class AIChase(AI):
+    
+    def takeTurn(self):
+        gameMessages = []
+        monster = self.owner
+        player = self.owner.enemyList[0]
+        inFOV = tcod.map_is_in_fov(monster.map.FOVMAP, monster.x, monster.y)
+
+        if inFOV:
+            gameMessages = monster.moveTowards(player)
+        return gameMessages
+        
+class AIConfuse(AI):
+
+    def __init__(self, oldAI, numTurns = 4):
+        self.oldAI = oldAI
+        self.numTurns = numTurns
+    def takeTurn(self):
+        message = []
+        if self.numTurns >=0:
+            message = self.owner.move(tcod.random_get_int(0,-1,1), tcod.random_get_int(0,-1,1))
+            self.numTurns -= 1
+        else:
+            self.owner.ai = self.oldAI
+            message = ["The creature is no longer confused"]
+        return message      
 #class to update the game's UI by updating/drawing the screen
 class GameDraw:
     def __init__(self,surface, actor, map, nonPlayerList, clock, messages):
@@ -404,6 +476,7 @@ class drawText:
         return self.textRect.height
     def textWidth(self):
         return self.textRect.width
+   
 
 #class to handle the game's map
 class Map:
@@ -490,8 +563,8 @@ class GameRunner:
         pygame.init()
         pygame.key.set_repeat(200, 70)
         self.gameMessages = []
-        self.ai = AI()
-        self.ai1 = AI()
+        self.ai = AIChase()
+        self.ai1 = AIChase()
         self.playerInv = Container()
         self.clock = pygame.time.Clock()
         self.surfaceMain = pygame.display.set_mode( (constants.mapWidth*constants.cellWidth,constants.mapHeight*constants.cellHeight) )
@@ -499,9 +572,9 @@ class GameRunner:
 
         self.map = Map(self.fovCalculate, None)
 
-        self.playerCreature = Creature("player")
-        self.enemyCreature = Creature("GiantEnemyCrab")
-        self.enemyCreature1 = Creature("Crabby Boi 2")
+        self.playerCreature = Creature(" PythonPlayer ")
+        self.enemyCreature = Creature(" Giant Enemy Crab ")
+        self.enemyCreature1 = Creature(" Crabby Boi 2 ")
 
         self.itemCom1 = Item(None, None, healOrDamageVal = 5)
         self.itemCom2 = Item(None, None, healOrDamageVal=5)
@@ -510,12 +583,12 @@ class GameRunner:
         self.mainEnemy2 = Actor(15,15,constants.mainEnemySprite, self.surfaceMain, self.map, [], "Crab Boi 2", self.enemyCreature1, self.ai1, item = self.itemCom2)
         self.enemyList = [self.mainEnemy, self.mainEnemy2]
         
-        self.player = Actor(1,1,constants.playerSprite, self.surfaceMain, self.map, self.enemyList, "Python", self.playerCreature, None, self.playerInv)
+        self.player = Actor(1,1,constants.playerSprite, self.surfaceMain, self.map, self.enemyList, "Player", self.playerCreature, None, self.playerInv)
         self.menu = menu(self.surfaceMain, self.player, self.enemyList)
        
         self.GameDrawer = GameDraw(self.surfaceMain,self.player, self.map, self.enemyList, self.clock, self.gameMessages)
-        self.mainEnemy.enemyList = [self.player]
-        self.mainEnemy2.enemyList = [self.player]
+        self.mainEnemy.enemyList = [self.player, self.mainEnemy2]
+        self.mainEnemy2.enemyList = [self.player, self.mainEnemy]
 
         self.map.player = self.player
         self.itemCom1.player = self.player
@@ -610,7 +683,7 @@ class GameRunner:
                     #targetcoords = str(target.menu_target_select())
                     #if targetcoords != None:
                     #   self.gameMessagesAppend(targetcoords,constants.colorWhite)
-                    gameMessages = self.testitem.lightingSpell(10,self.GameDrawer.nonPlayerList)
+                    gameMessages = self.testitem.confusionSpell(self.GameDrawer.nonPlayerList, 3)
                     if gameMessages != []:
                             for message in gameMessages:
                                 self.gameMessagesAppend(message,constants.colorWhite)
