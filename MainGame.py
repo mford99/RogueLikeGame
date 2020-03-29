@@ -249,11 +249,19 @@ class Actor:
                 if(target.objName == "Player"):
                     gameMessage.append(self.displayName + " attacks " + target.displayName + " for " + str(self.creature.power) + " damage")
                     deathMessage = self.creature.attack(target)
+                    if target.creature:
+                        gameMessage.append(target.displayName + " has health of " + str(target.creature.hp) + "/" + str(target.creature.maxHp))
+                    else:
+                        gameMessage.append(target.displayName +  " has died!")
                     if deathMessage:
                         gameMessage.append(deathMessage)
             else:
                 gameMessage.append(self.displayName + " attacks " + target.displayName + " for " + str(self.creature.power) + " damage")
                 deathMessage = self.creature.attack(target)
+                if target.creature:
+                    gameMessage.append(target.displayName + " has health of " + str(target.creature.hp) + "/" + str(target.creature.maxHp))
+                else:
+                    gameMessage.append(target.displayName +  " has died!")
                 if deathMessage:
                     gameMessage.append(deathMessage)
         return gameMessage
@@ -306,8 +314,8 @@ class Creature:
     def setOwner(self, owner):
         self.owner = owner
     def takeDamage(self, damage):
-        self.hp = self.hp -(damage + self.defense)
-
+        self.hp = self.hp - damage + self.defense
+        
         if(self.hp <=0):
             return self.owner.ai.deathFunction()
     def attack(self, target):
@@ -324,13 +332,20 @@ class Creature:
     
     @property 
     def defense(self):
-        return self.baseDef
+        totalDefense = self.baseDef
+        if self.owner.container:
+            objectBonuses = [obj.equipment.defenseBonus for obj in self.owner.container.equippedItems]
+            
+            for bonus in objectBonuses:
+                totalDefense += bonus
+        return totalDefense
     
     def restoreHP(self, value):
         if(self.hp == self.maxHp):
             return "cancelled"
         else:
             self.hp = min(self.hp+value,self.maxHp)
+           
             return "success"
 
 #class for items. Item class contains different methods depending on what spells are in the game
@@ -458,6 +473,15 @@ class Equipment:
             return self.equip()
             
     def equip(self):
+
+        allEquippedItems = []
+        if self.player:
+            allEquippedItems = self.player.container.equippedItems 
+
+        for item in allEquippedItems:
+            if (item.equipment.slot and item.equipment.slot == self.slot):
+                return "Equipment Slot is Occupied! Can't equip item"
+
         self.equipped = True
         return "Item Equipped"
     def unequip(self):
@@ -708,12 +732,16 @@ class GameRunner:
         self.itemCom1 = Item(None, None, healOrDamageVal = 5)
         self.itemCom2 = Item(None, None, healOrDamageVal = 5)
         self.testItem = Item(None, None)
-        self.testSword = Equipment(None, 2, 0, None)
+        self.testSword = Equipment(None, 2, 0, slot="rightHand")
+        self.testSword1 = Equipment(None, 2, 0, slot="rightHand")
+        self.testShield = Equipment(None, 0, 1, slot ="leftHand")
 
         self.Sword = Actor(3,3, constants.swordSprite, self.surfaceMain, self.map, [], "Short Sword", equipment=self.testSword)
+        self.Sword1 = Actor(3,4, constants.swordSprite, self.surfaceMain, self.map, [], "Short Sword", equipment=self.testSword1)        
+        self.Shield = Actor(2,2, constants.shieldSprite, self.surfaceMain, self.map, [], "Shield", equipment=self.testShield)
         self.mainEnemy = Actor(15,15,constants.mainEnemySprite, self.surfaceMain, self.map, [], "Crab", self.enemyCreature, self.ai, item = self.itemCom1)
         self.mainEnemy2 = Actor(15,15,constants.mainEnemySprite, self.surfaceMain, self.map, [], "Crab", self.enemyCreature1, self.ai1, item = self.itemCom2)
-        self.enemyList = [self.mainEnemy, self.mainEnemy2, self.Sword]
+        self.enemyList = [self.mainEnemy, self.mainEnemy2, self.Sword, self.Shield, self.Sword1]
         
         self.player = Actor(1,1,constants.playerSprite, self.surfaceMain, self.map, self.enemyList, "Player", self.playerCreature, None, self.playerInv)
        
@@ -729,6 +757,8 @@ class GameRunner:
         self.itemCom2.player = self.player
         self.testItem.player = self.player
         self.testSword.player = self.player
+        self.testShield.player =self.player
+        self.testSword1.player = self.player
     def game_main_loop(self):
  
         gameQuitStatus = False
