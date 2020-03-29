@@ -9,7 +9,7 @@ import constants
 
 #class for a menu such as an inventory menu and a menu that pauses the game
 class menu():
-    def __init__(self,surface, player, nonPlayerList):
+    def __init__(self,surface, player, nonPlayerList, GameDrawer = None):
         self.surface = surface
         self.player = player
         self.nonPlayerList = nonPlayerList
@@ -39,7 +39,7 @@ class menu():
         menuClose = False
 
         gameMessages = []
-        menuWidth = 200
+        menuWidth = 250
         menuHeight = 200
         windowsWidth = constants.mapWidth* constants.cellWidth
         windowsHeight = constants.mapHeight * constants.cellHeight
@@ -47,10 +47,13 @@ class menu():
 
         menuX = windowsWidth/2 - menuWidth/2
         menuY = windowsHeight/2-menuHeight/2
-
+        printList = []
+        for obj in self.player.container.inventory:
+            printList.append(obj.displayName)
 
         while not menuClose:
-            printList = [obj.objName for obj in self.player.container.inventory]
+            printList = [obj.displayName for obj in self.player.container.inventory]
+
             drawInv = drawText(inventorySurface, "blah", constants.colorWhite,
                                    (0,0+1))
             inventorySurface.fill(constants.colorBlack)
@@ -62,6 +65,7 @@ class menu():
             mouseLineSelection = int(mouseYRelative / drawInv.textHeight())
             mouseInWindow = (mouseXRelative > 0 and mouseYRelative > 0) and (mouseXRelative < menuWidth and mouseYRelative < menuHeight)
 
+    
             eventList = pygame.event.get()
             for event in eventList:
                 if event.type == pygame.KEYDOWN:
@@ -73,9 +77,17 @@ class menu():
                         if (mouseInWindow and 
                             mouseLineSelection <= len(printList)-1):
                               if(len(gameMessages) > 0):
-                                 gameMessages.append(self.player.container.inventory[mouseLineSelection].item.use(self.nonPlayerList))
+                                  if self.player.container.inventory[mouseLineSelection].item != None:
+                                     
+                                     gameMessages.append(self.player.container.inventory[mouseLineSelection].item.use(self.nonPlayerList))
+                                  else:
+                                     gameMessages.append(self.player.container.inventory[mouseLineSelection].equipment.use(self.nonPlayerList))
                               else:
-                                 gameMessages = [self.player.container.inventory[mouseLineSelection].item.use(self.nonPlayerList)]
+                                  if self.player.container.inventory[mouseLineSelection].item != None:
+                                     
+                                     gameMessages = [self.player.container.inventory[mouseLineSelection].item.use(self.nonPlayerList)]
+                                  else:
+                                     gameMessages = [self.player.container.inventory[mouseLineSelection].equipment.use(self.nonPlayerList)]
 
             #draws inventory items on inv menu
             for line , (name) in enumerate(printList):
@@ -90,6 +102,7 @@ class menu():
                                     (0,0))
                     drawInv.coords = (0,0+line*drawInv.textHeight())
                     drawInv.drawOnSurface()
+            
             self.surface.blit(inventorySurface, ((menuX),(menuY)))
             pygame.display.update()
         return gameMessages
@@ -179,7 +192,7 @@ class targetselect:
         
 #baseclass for an actor. Actor being any object that can interact with a surface
 class Actor:
-    def __init__(self, x, y, sprite, surface, map, enemyList, objName,creature = None, ai = None, container = None, item = None):
+    def __init__(self, x, y, sprite, surface, map, enemyList, objName,creature = None, ai = None, container = None, item = None, equipment = None):
         self.x = x #map address
         self.y = y # map address
         self.objName = objName
@@ -205,6 +218,11 @@ class Actor:
         self.item = item
         if self.item:
             self.item.setOwner(self)
+        
+        self.equipment = equipment
+        if self.equipment:
+            self.equipment.setOwner(self)
+
 
     def draw(self):
         self.surface.blit(self.sprite, ( self.x*constants.cellWidth, self.y*constants.cellHeight ))
@@ -229,13 +247,21 @@ class Actor:
         if target and target.creature is not None:
             if(self.objName != "Player"):
                 if(target.objName == "Player"):
-                    gameMessage.append(self.creature.name + " attacks " + target.creature.name + "for 3 damage")
-                    deathMessage = target.creature.takeDamage(3)
+                    gameMessage.append(self.displayName + " attacks " + target.displayName + " for " + str(self.creature.power) + " damage")
+                    deathMessage = self.creature.attack(target)
+                    if target.creature:
+                        gameMessage.append(target.displayName + " has health of " + str(target.creature.hp) + "/" + str(target.creature.maxHp))
+                    else:
+                        gameMessage.append(target.displayName +  " has died!")
                     if deathMessage:
                         gameMessage.append(deathMessage)
             else:
-                gameMessage.append(self.creature.name + " attacks " + target.creature.name + "for 3 damage")
-                deathMessage = target.creature.takeDamage(3)
+                gameMessage.append(self.displayName + " attacks " + target.displayName + " for " + str(self.creature.power) + " damage")
+                deathMessage = self.creature.attack(target)
+                if target.creature:
+                    gameMessage.append(target.displayName + " has health of " + str(target.creature.hp) + "/" + str(target.creature.maxHp))
+                else:
+                    gameMessage.append(target.displayName +  " has died!")
                 if deathMessage:
                     gameMessage.append(deathMessage)
         return gameMessage
@@ -259,27 +285,67 @@ class Actor:
 
         return self.move(dx,dy)
 
+    @property
+    def displayName(self):
+        
+        if self.creature:
+            return self.creature.name + " the " + self.objName
+        elif self.equipment:
+            if self.equipment.equipped:
+                return self.objName + " equipped"
+            else:
+                return self.objName + " unequipped"
+        else:
+            return self.objName
+
 
 #class for creatures which are controlled by actors
-class Creature():
-    def __init__(self, name, hp = 10):
+class Creature:
+    def __init__(self, name, hp = 10, baseAtck = 2, baseDef = 0):
         self.name = name
         self.hp = hp
         self.owner = None
         self.maxHp = hp
+        self.baseAtck = baseAtck
+        self.baseDef = baseDef
+        self.currentAtck = baseAtck
+        self.currentDef = baseDef
 
     def setOwner(self, owner):
         self.owner = owner
     def takeDamage(self, damage):
-        self.hp -= damage
-
+        self.hp = self.hp - damage + self.defense
+        
         if(self.hp <=0):
             return self.owner.ai.deathFunction()
+    def attack(self, target):
+        return target.creature.takeDamage(self.power)
+    @property 
+    def power(self):
+        totalPower = self.baseAtck
+
+        if self.owner.container:
+            objectBonuses = [obj.equipment.attackBonus for obj in self.owner.container.equippedItems]
+            for bonus in objectBonuses:
+                totalPower += bonus
+        return totalPower
+    
+    @property 
+    def defense(self):
+        totalDefense = self.baseDef
+        if self.owner.container:
+            objectBonuses = [obj.equipment.defenseBonus for obj in self.owner.container.equippedItems]
+            
+            for bonus in objectBonuses:
+                totalDefense += bonus
+        return totalDefense
+    
     def restoreHP(self, value):
         if(self.hp == self.maxHp):
             return "cancelled"
         else:
             self.hp = min(self.hp+value,self.maxHp)
+           
             return "success"
 
 #class for items. Item class contains different methods depending on what spells are in the game
@@ -312,6 +378,7 @@ class Item:
     
     def setOwner(self,actor):
         self.owner = actor
+        self.objName = self.owner.objName
 
     #by default heals the player by eating a corpse
     # will call different methods depending on 
@@ -338,8 +405,9 @@ class Item:
                 targets = self.player.map.map_objects_atcoords(x,y, nonPlayerList)
 
                 for target in targets:
-                    gameMessages.append("lightning spell did " + str(value) + " damage to " + target.creature.name)
-                    target.creature.takeDamage(value)
+                    gameMessages.append("lightning spell did " + str(value) + " damage to " + target.displayName)
+                    if target.creature:
+                        target.creature.takeDamage(value)
         return gameMessages
     
     def confusionSpell(self, numTurns, nonPlayerList):
@@ -358,8 +426,70 @@ class Item:
                 target.ai = AIConfuse(oldAI, numTurns)
                 target.ai.owner = target
 
-                gameMessage = ["The creature's eyes glaze over"]
+                gameMessage = [ target.ai.owner.displayName + " eyes glaze over"]
         return gameMessage
+
+class Equipment:
+
+    def __init__(self, player, attackBonus , defenseBonus , slot):
+        self.attackBonus = attackBonus
+        self.defenseBonus = defenseBonus
+        self.slot = slot
+        self.player = player
+        self.equipped = False
+        self.baseVolume = 0
+        self.container = None
+
+    def setOwner(self,actor):
+        self.owner = actor
+        self.objName = self.owner.objName
+
+    def pickUp(self, nonPlayerList):
+        gameMessages = []
+        if self.player.container:
+            if self.player.container.volume + self.baseVolume > self.player.container.baseVolume:
+                gameMessages = ["Not enough inv space"]
+            else:
+                gameMessages = ["Picking up equipment"]
+                self.player.container.inventory.append(self.owner)
+                
+                nonPlayerList.remove(self.owner)
+                self.container = self.player.container
+        return gameMessages
+    
+    def drop(self, nonPlayerList):
+        gameMessages = ["Dropping Item"]
+        self.container.inventory.remove(self.owner)
+        self.owner.x = self.player.x
+        self.owner.y = self.player.y
+        nonPlayerList.append(self.owner)
+        return gameMessages
+
+    def toggleEquipped(self):
+        
+        if  self.equipped:
+            return self.unequip()
+        else:
+            return self.equip()
+            
+    def equip(self):
+
+        allEquippedItems = []
+        if self.player:
+            allEquippedItems = self.player.container.equippedItems 
+
+        for item in allEquippedItems:
+            if (item.equipment.slot and item.equipment.slot == self.slot):
+                return "Equipment Slot is Occupied! Can't equip item"
+
+        self.equipped = True
+        return "Item Equipped"
+    def unequip(self):
+        self.equipped = False
+        return "Item Unequipped"
+
+    def use(self, nonPlayerList, equip = True):
+        return self.toggleEquipped()
 
 #class for  a container. I.e just a list that is connected to a certain actor
 class Container :
@@ -373,6 +503,10 @@ class Container :
     @property
     def volume(self):
         return self.currentVolume
+    @property
+    def equippedItems(self):
+        equippedItems = [obj for obj in self.inventory if obj.equipment != None and obj.equipment.equipped]
+        return equippedItems
 
 #class for an individual tile on the map
 class tileStrucutre:
@@ -390,7 +524,7 @@ class AI:
         message = self.owner.move(tcod.random_get_int(0,-1,1), tcod.random_get_int(0,-1,1))
         return message
     def deathFunction(self):
-        gameMessage = self.owner.creature.name + "is dead!"
+        gameMessage = self.owner.displayName + " is dead!"
         self.owner.creature = None
         self.owner.ai = None
         return gameMessage
@@ -419,7 +553,7 @@ class AIConfuse(AI):
             self.numTurns -= 1
         else:
             self.owner.ai = self.oldAI
-            message = ["The creature is no longer confused"]
+            message = [self.owner.displayName + " is no longer confused"]
         return message      
 #class to update the game's UI by updating/drawing the screen
 class GameDraw:
@@ -591,28 +725,40 @@ class GameRunner:
 
         self.map = Map(self.fovCalculate, None)
 
-        self.playerCreature = Creature(" PythonPlayer ")
-        self.enemyCreature = Creature(" Giant Enemy Crab ")
-        self.enemyCreature1 = Creature(" Crabby Boi 2 ")
+        self.playerCreature = Creature("Python")
+        self.enemyCreature = Creature("Mr.Krabs")
+        self.enemyCreature1 = Creature("Crabby")
 
         self.itemCom1 = Item(None, None, healOrDamageVal = 5)
-        self.itemCom2 = Item(None, None, healOrDamageVal=5)
-        self.testitem = Item(None, None)
+        self.itemCom2 = Item(None, None, healOrDamageVal = 5)
+        self.testItem = Item(None, None)
+        self.testSword = Equipment(None, 2, 0, slot="rightHand")
+        self.testSword1 = Equipment(None, 2, 0, slot="rightHand")
+        self.testShield = Equipment(None, 0, 1, slot ="leftHand")
+
+        self.Sword = Actor(3,3, constants.swordSprite, self.surfaceMain, self.map, [], "Short Sword", equipment=self.testSword)
+        self.Sword1 = Actor(3,4, constants.swordSprite, self.surfaceMain, self.map, [], "Short Sword", equipment=self.testSword1)        
+        self.Shield = Actor(2,2, constants.shieldSprite, self.surfaceMain, self.map, [], "Shield", equipment=self.testShield)
         self.mainEnemy = Actor(15,15,constants.mainEnemySprite, self.surfaceMain, self.map, [], "Crab", self.enemyCreature, self.ai, item = self.itemCom1)
-        self.mainEnemy2 = Actor(15,15,constants.mainEnemySprite, self.surfaceMain, self.map, [], "Crab Boi 2", self.enemyCreature1, self.ai1, item = self.itemCom2)
-        self.enemyList = [self.mainEnemy, self.mainEnemy2]
+        self.mainEnemy2 = Actor(15,15,constants.mainEnemySprite, self.surfaceMain, self.map, [], "Crab", self.enemyCreature1, self.ai1, item = self.itemCom2)
+        self.enemyList = [self.mainEnemy, self.mainEnemy2, self.Sword, self.Shield, self.Sword1]
         
         self.player = Actor(1,1,constants.playerSprite, self.surfaceMain, self.map, self.enemyList, "Player", self.playerCreature, None, self.playerInv)
-        self.menu = menu(self.surfaceMain, self.player, self.enemyList)
        
         self.GameDrawer = GameDraw(self.surfaceMain,self.player, self.map, self.enemyList, self.clock, self.gameMessages)
+        
+        self.menu = menu(self.surfaceMain, self.player, self.enemyList, self.GameDrawer)
+        
         self.mainEnemy.enemyList = [self.player, self.mainEnemy2]
         self.mainEnemy2.enemyList = [self.player, self.mainEnemy]
 
         self.map.player = self.player
         self.itemCom1.player = self.player
         self.itemCom2.player = self.player
-        self.testitem.player = self.player
+        self.testItem.player = self.player
+        self.testSword.player = self.player
+        self.testShield.player =self.player
+        self.testSword1.player = self.player
     def game_main_loop(self):
  
         gameQuitStatus = False
@@ -684,6 +830,11 @@ class GameRunner:
                            if gameMessages != []:
                                 for message in gameMessages:
                                     self.gameMessagesAppend(message,constants.colorWhite)
+                        if obj.equipment:
+                               gameMessages = obj.equipment.pickUp(self.GameDrawer.nonPlayerList)
+                               if gameMessages != []:
+                                    for message in gameMessages:
+                                        self.gameMessagesAppend(message,constants.colorWhite)
                 if event.key == pygame.K_d:
                      if len(self.player.container.inventory) > 0:
                          gameMessages = self.player.container.inventory[-1].item.drop(self.GameDrawer.nonPlayerList)
@@ -698,7 +849,7 @@ class GameRunner:
                             for message in gameMessages:
                                 self.gameMessagesAppend(message,constants.colorWhite)
                 elif event.key == pygame.K_q:
-                    gameMessages = self.testitem.confusionSpell(3, self.GameDrawer.nonPlayerList)
+                    gameMessages = self.testItem.lightingSpell(10, self.GameDrawer.nonPlayerList)
                     if gameMessages != []:
                             for message in gameMessages:
                                 self.gameMessagesAppend(message,constants.colorWhite)
