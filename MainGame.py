@@ -47,10 +47,13 @@ class menu():
 
         menuX = windowsWidth/2 - menuWidth/2
         menuY = windowsHeight/2-menuHeight/2
-
+        printList = []
+        for obj in self.player.container.inventory:
+            printList.append(obj.displayName)
 
         while not menuClose:
             printList = [obj.displayName for obj in self.player.container.inventory]
+
             drawInv = drawText(inventorySurface, "blah", constants.colorWhite,
                                    (0,0+1))
             inventorySurface.fill(constants.colorBlack)
@@ -74,14 +77,14 @@ class menu():
                         if (mouseInWindow and 
                             mouseLineSelection <= len(printList)-1):
                               if(len(gameMessages) > 0):
-                                  if isinstance(self.player.container.inventory[mouseLineSelection], Item):
-                                     print( self.player.container.inventory[mouseLineSelection].item.owner.objName)
+                                  if self.player.container.inventory[mouseLineSelection].item != None:
+                                     
                                      gameMessages.append(self.player.container.inventory[mouseLineSelection].item.use(self.nonPlayerList))
                                   else:
                                      gameMessages.append(self.player.container.inventory[mouseLineSelection].equipment.use(self.nonPlayerList))
                               else:
-                                  if isinstance(self.player.container.inventory[mouseLineSelection], Item):
-                                     print( self.player.container.inventory[mouseLineSelection].item.owner.objName)
+                                  if self.player.container.inventory[mouseLineSelection].item != None:
+                                     
                                      gameMessages = [self.player.container.inventory[mouseLineSelection].item.use(self.nonPlayerList)]
                                   else:
                                      gameMessages = [self.player.container.inventory[mouseLineSelection].equipment.use(self.nonPlayerList)]
@@ -220,7 +223,6 @@ class Actor:
         if self.equipment:
             self.equipment.setOwner(self)
 
-            self.item = Item(self,self)
 
     def draw(self):
         self.surface.blit(self.sprite, ( self.x*constants.cellWidth, self.y*constants.cellHeight ))
@@ -280,14 +282,13 @@ class Actor:
         
         if self.creature:
             return self.creature.name + " the " + self.objName
-        elif self.item:
-            if self.equipment:
-                if self.equipment.equipped:
-                    return self.objName + " equipped"
-                else:
-                    return self.objName + " unequipped"
+        elif self.equipment:
+            if self.equipment.equipped:
+                return self.objName + " equipped"
             else:
-                return self.objName
+                return self.objName + " unequipped"
+        else:
+            return self.objName
 
 
 #class for creatures which are controlled by actors
@@ -317,7 +318,6 @@ class Creature:
 
         if self.owner.container:
             objectBonuses = [obj.equipment.attackBonus for obj in self.owner.container.equippedItems]
-
             for bonus in objectBonuses:
                 totalPower += bonus
         return totalPower
@@ -435,8 +435,9 @@ class Equipment:
             if self.player.container.volume + self.baseVolume > self.player.container.baseVolume:
                 gameMessages = ["Not enough inv space"]
             else:
-                gameMessages = ["Picking up item"]
+                gameMessages = ["Picking up equipment"]
                 self.player.container.inventory.append(self.owner)
+                
                 nonPlayerList.remove(self.owner)
                 self.container = self.player.container
         return gameMessages
@@ -480,7 +481,8 @@ class Container :
         return self.currentVolume
     @property
     def equippedItems(self):
-        return [obj for obj in self.inventory if isinstance(obj, Equipment) and obj.equipment.equipped]
+        equippedItems = [obj for obj in self.inventory if obj.equipment != None and obj.equipment.equipped]
+        return equippedItems
 
 #class for an individual tile on the map
 class tileStrucutre:
@@ -799,7 +801,6 @@ class GameRunner:
                                 for message in gameMessages:
                                     self.gameMessagesAppend(message,constants.colorWhite)
                         if obj.equipment:
-                               print("reached equip pickup")
                                gameMessages = obj.equipment.pickUp(self.GameDrawer.nonPlayerList)
                                if gameMessages != []:
                                     for message in gameMessages:
