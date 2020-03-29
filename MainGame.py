@@ -7,6 +7,108 @@ from typing import Tuple
 #game files
 import constants
 
+class randomItemGeneration():
+    def __init__(self,surface, player, map, nonPlayerList):
+        self.surface = surface
+        self.player = player
+        self.map = map
+        self.nonPlayerList = nonPlayerList
+    
+    def genItem(self, coords):
+        randomNum = tcod.random_get_int(0,1,4)
+
+        if randomNum == 1: 
+            lightningSpell = genLighting(coords, self.surface, self.player, self.map)
+            lightningSpellActor = lightningSpell.generate()
+            self.nonPlayerList.append(lightningSpellActor)
+            return lightningSpellActor
+        if randomNum == 2: 
+            confusionSpell = genConfusionSpell(coords, self.surface, self.player, self.map)
+            confusionSpellActor = confusionSpell.generate()
+            self.nonPlayerList.append(confusionSpellActor)
+            return confusionSpellActor
+        if randomNum == 3: 
+            sword = genSword(coords, self.surface, self.player, self.map)
+            swordActor = sword.generate()
+            self.nonPlayerList.append(swordActor)
+            return swordActor
+        if randomNum == 4: 
+            shield = genShield(coords, self.surface, self.player, self.map)
+            shieldActor = shield.generate()
+            self.nonPlayerList.append(shieldActor)
+            return shieldActor
+
+class genSword():
+    
+    def __init__(self,coords, surface, player, map):
+        self.coords = coords
+        self.player = player
+        self.map = map
+        self.surface = surface
+        self.itemActor = None
+    
+    def generate(self):
+        x,y = self.coords
+        bonus = tcod.random_get_int(0, 1, 2)
+        Sword = Equipment(self.player, bonus, 0, "rightHand")
+
+        self.itemActor = Actor(x,y, constants.swordSprite, self.surface, self.map, [], "Sword",equipment= Sword)
+        return self.itemActor
+class genShield():
+    
+    def __init__(self,coords, surface, player, map):
+        self.coords = coords
+        self.player = player
+        self.map = map
+        self.surface = surface
+        self.itemActor = None
+    
+    def generate(self):
+        x,y = self.coords
+        bonus = tcod.random_get_int(0, 1, 2)
+        Sword = Equipment(self.player, 0, bonus, "leftHand")
+
+        self.itemActor = Actor(x,y, constants.shieldSprite, self.surface, self.map, [], "Shield",equipment= Sword)
+        return self.itemActor
+#class for generating lightning spell w/ random damage
+class genLighting():
+    
+    def __init__(self,coords, surface, player, map):
+        self.coords = coords
+        self.player = player
+        self.map = map
+        self.surface = surface
+        self.itemActor = None
+    
+    def generate(self):
+        x,y = self.coords
+        damage = tcod.random_get_int(0, 5, 7)
+        LightningItem = Item(owner=None, player=self.player, healOrDamageVal= damage)
+
+        self.itemActor = Actor(x,y, constants.lightningScrollSprite, self.surface, self.map, [], "Lighting Scroll", item = LightningItem)
+        return self.itemActor
+#class for confusion spell with random time and place
+class genConfusionSpell():
+    
+    def __init__(self,coords, surface, player, map):
+        self.coords = coords
+        self.player = player
+        self.map = map
+        self.surface = surface
+        self.itemActor = None
+    def generate(self):
+        x,y = self.coords
+        numTurns = tcod.random_get_int(0, 2, 4)
+        ConfusionItem = Item(owner=None, player=self.player, healOrDamageVal= numTurns )
+
+        self.itemActor = Actor(x,y, constants.confusionScrollSprite, self.surface, self.map, [], "Confusion Scroll", item = ConfusionItem)
+
+        return self.itemActor
+
+#CLASS FOR FIREBALL GENERATION FOR STEFAN TO DO
+
+
+
 #class for a menu such as an inventory menu and a menu that pauses the game
 class menu():
     def __init__(self,surface, player, nonPlayerList, GameDrawer = None):
@@ -80,11 +182,13 @@ class menu():
                                   if self.player.container.inventory[mouseLineSelection].item != None:
                                      
                                      gameMessages.append(self.player.container.inventory[mouseLineSelection].item.use(self.nonPlayerList))
+                                     menuClose = True
                                   else:
                                      gameMessages.append(self.player.container.inventory[mouseLineSelection].equipment.use(self.nonPlayerList))
                               else:
                                   if self.player.container.inventory[mouseLineSelection].item != None:
                                      
+                                     menuClose = True
                                      gameMessages = [self.player.container.inventory[mouseLineSelection].item.use(self.nonPlayerList)]
                                   else:
                                      gameMessages = [self.player.container.inventory[mouseLineSelection].equipment.use(self.nonPlayerList)]
@@ -188,8 +292,7 @@ class targetselect:
             drawX.drawOnSurface(incomingFont=constants.fontCursorText, center=center)
             
         self.surface.blit(new_surface,(new_x,new_y))
-        
-        
+              
 #baseclass for an actor. Actor being any object that can interact with a surface
 class Actor:
     def __init__(self, x, y, sprite, surface, map, enemyList, objName,creature = None, ai = None, container = None, item = None, equipment = None):
@@ -234,9 +337,14 @@ class Actor:
         gameMessage = []
 
         for enemy in self.enemyList:
-            if (enemy.x == self.x + dx and enemy.y == self.y + dy):
-                target = enemy
-                break
+            try:
+                if (enemy.x == self.x + dx and enemy.y == self.y + dy):
+                    target = enemy
+                    break
+            except AttributeError:
+                if (enemy.itemActor.x == self.x + dx and enemy.itemActor.y == self.y + dy):
+                    target = enemy
+                    break
         if not tileIsWall and target is None:
                 self.x += dx
                 self.y += dy
@@ -298,7 +406,6 @@ class Actor:
         else:
             return self.objName
 
-
 #class for creatures which are controlled by actors
 class Creature:
     def __init__(self, name, hp = 10, baseAtck = 2, baseDef = 0):
@@ -317,7 +424,11 @@ class Creature:
         self.hp = self.hp - damage + self.defense
         
         if(self.hp <=0):
-            return self.owner.ai.deathFunction()
+            if self.owner.ai:
+                return self.owner.ai.deathFunction()
+            else:
+                #TO FINISH
+                print("You are dead")
     def attack(self, target):
         return target.creature.takeDamage(self.power)
     @property 
@@ -342,21 +453,21 @@ class Creature:
     
     def restoreHP(self, value):
         if(self.hp == self.maxHp):
-            return "cancelled"
+            return "At full hp"
         else:
             self.hp = min(self.hp+value,self.maxHp)
-           
-            return "success"
+            return "Consumed corpse to heal for " + str(value)
 
 #class for items. Item class contains different methods depending on what spells are in the game
 class Item:
-    def __init__(self, owner, player, weight = 0.0, volume = 0.0, healOrDamageVal = 0):
+    def __init__(self, owner, player, nonPlayerList = None, weight = 0.0, volume = 0.0, healOrDamageVal = 0):
         self.weight = weight
         self.baseVolume = volume
         self.owner = owner
         self.container = None
         self.player = player
         self.value = healOrDamageVal
+        self.nonPlayerList = nonPlayerList
     def pickUp(self, nonPlayerList):
         gameMessages = []
         if self.player.container:
@@ -384,13 +495,16 @@ class Item:
     # will call different methods depending on 
     # what the actor's name is. TO BE FINSIHED
     def use(self, nonPlayerList):
-        useResult = self.player.creature.restoreHP(self.value)
-        if useResult == "cancelled":
-            gameMessages = "Already at full health"
+        useResult = None
+        if self.owner.objName == "Lighting Scroll":
+            useResult = self.lightingSpell(self.value, nonPlayerList)
+        elif self.owner.objName == "Confusion Scroll":
+            useResult = self.confusionSpell(self.value, nonPlayerList)
         else:
-            gameMessages = "Consumsed corpse to heal for: " + str(self.value)
+            useResult = self.player.creature.restoreHP(self.value)
+        if useResult != "Spell cancelled" and useResult != "At full hp":
             self.container.inventory.remove(self.owner)
-        return gameMessages
+        return useResult
 
     def lightingSpell(self, value, nonPlayerList):
         
@@ -405,9 +519,11 @@ class Item:
                 targets = self.player.map.map_objects_atcoords(x,y, nonPlayerList)
 
                 for target in targets:
-                    gameMessages.append("lightning spell did " + str(value) + " damage to " + target.displayName)
+                    gameMessages = "lightning spell did " + str(value) + " damage to " + target.displayName
                     if target.creature:
                         target.creature.takeDamage(value)
+        else:
+            gameMessages = "Spell cancelled"
         return gameMessages
     
     def confusionSpell(self, numTurns, nonPlayerList):
@@ -426,7 +542,9 @@ class Item:
                 target.ai = AIConfuse(oldAI, numTurns)
                 target.ai.owner = target
 
-                gameMessage = [ target.ai.owner.displayName + " eyes glaze over"]
+                gameMessage = target.ai.owner.displayName + " eyes glaze over"
+        else:
+            gameMessage = "Spell cancelled"
         return gameMessage
 
 class Equipment:
@@ -575,7 +693,7 @@ class GameDraw:
             isVisble = tcod.map_is_in_fov(self.map.FOVMAP,obj.x, obj.y)
             if isVisble:
                 obj.draw()
-        
+                       
         self.player.draw()
         self.drawMessages()
 
@@ -596,7 +714,6 @@ class GameDraw:
             self.drawTextObject.coords = (0, startY + (i*self.drawTextObject.textHeight()))
             self.drawTextObject.drawOnSurface(constants.colorBlack)
             i+=1
-
 
 #class to handle displaying a singular text string to a surface
 class drawText:
@@ -631,7 +748,6 @@ class drawText:
     def textWidth(self):
         return self.textRect.width
    
-
 #class to handle the game's map
 class Map:
     def __init__(self, fovCalculate, player):
@@ -684,6 +800,7 @@ class Map:
             tcod.map_compute_fov(self.FOVMAP, self.player.x, self.player.y, constants.torchRadius, constants.FOVLIGHTWALLS, constants.FOVALGO)
 
     def map_objects_atcoords(self,coords_x,coords_y, nonPlayerList):
+
         objectOptions = [obj for obj in nonPlayerList if obj.x == coords_x and obj.y == coords_y]
         return objectOptions
     
@@ -725,23 +842,16 @@ class GameRunner:
 
         self.map = Map(self.fovCalculate, None)
 
-        self.playerCreature = Creature("Python")
+        self.playerCreature = Creature("Python", hp=15)
         self.enemyCreature = Creature("Mr.Krabs")
         self.enemyCreature1 = Creature("Crabby")
 
         self.itemCom1 = Item(None, None, healOrDamageVal = 5)
         self.itemCom2 = Item(None, None, healOrDamageVal = 5)
-        self.testItem = Item(None, None)
-        self.testSword = Equipment(None, 2, 0, slot="rightHand")
-        self.testSword1 = Equipment(None, 2, 0, slot="rightHand")
-        self.testShield = Equipment(None, 0, 1, slot ="leftHand")
 
-        self.Sword = Actor(3,3, constants.swordSprite, self.surfaceMain, self.map, [], "Short Sword", equipment=self.testSword)
-        self.Sword1 = Actor(3,4, constants.swordSprite, self.surfaceMain, self.map, [], "Short Sword", equipment=self.testSword1)        
-        self.Shield = Actor(2,2, constants.shieldSprite, self.surfaceMain, self.map, [], "Shield", equipment=self.testShield)
         self.mainEnemy = Actor(15,15,constants.mainEnemySprite, self.surfaceMain, self.map, [], "Crab", self.enemyCreature, self.ai, item = self.itemCom1)
         self.mainEnemy2 = Actor(15,15,constants.mainEnemySprite, self.surfaceMain, self.map, [], "Crab", self.enemyCreature1, self.ai1, item = self.itemCom2)
-        self.enemyList = [self.mainEnemy, self.mainEnemy2, self.Sword, self.Shield, self.Sword1]
+        self.enemyList = [self.mainEnemy, self.mainEnemy2]
         
         self.player = Actor(1,1,constants.playerSprite, self.surfaceMain, self.map, self.enemyList, "Player", self.playerCreature, None, self.playerInv)
        
@@ -755,10 +865,13 @@ class GameRunner:
         self.map.player = self.player
         self.itemCom1.player = self.player
         self.itemCom2.player = self.player
-        self.testItem.player = self.player
-        self.testSword.player = self.player
-        self.testShield.player =self.player
-        self.testSword1.player = self.player
+
+        self.genItems = randomItemGeneration(self.surfaceMain, self.player, self.map, self.enemyList)
+        self.genItems.genItem((2,2))
+        self.genItems.genItem((2,3))
+        self.genItems.genItem((2,4))
+
+
     def game_main_loop(self):
  
         gameQuitStatus = False
@@ -771,7 +884,7 @@ class GameRunner:
 
             if playerAction != "no-action":
                 for enemy in self.enemyList:
-                    if(enemy.ai != None):
+                    if( hasattr(enemy, "ai") and enemy.ai != None):
                         gameMessage = enemy.getai().takeTurn()
                         if gameMessage != []:
                             for message in gameMessage:
@@ -848,13 +961,7 @@ class GameRunner:
                    if gameMessages != []:
                             for message in gameMessages:
                                 self.gameMessagesAppend(message,constants.colorWhite)
-                elif event.key == pygame.K_q:
-                    gameMessages = self.testItem.lightingSpell(10, self.GameDrawer.nonPlayerList)
-                    if gameMessages != []:
-                            for message in gameMessages:
-                                self.gameMessagesAppend(message,constants.colorWhite)
-
-                    
+               
         return "no-action"
 
 #class to start the game. AKin to TicTacToeApplication in Assignment 1 of Software Design
