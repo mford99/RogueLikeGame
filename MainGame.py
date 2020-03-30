@@ -7,7 +7,86 @@ from typing import Tuple
 #game files
 import constants
 
-class randomItemGeneration():
+class genPlayer:
+
+    def __init__(self, surface, map, nonPlayerList):
+        self.surface  = surface
+        self.map = map
+        self.nonPlayerList = nonPlayerList
+
+    def generate(self, coords):
+        x,y = coords
+        playerCreature = Creature("Python", 15)
+        playerInv = Container()
+        player = Actor(x,y,constants.playerSprite, self.surface, self.map, self.nonPlayerList, "Player", playerCreature, None, playerInv)
+        self.nonPlayerList.append(player)
+        return player
+
+class genEnemies:
+    
+    def __init__(self,surface, player, map, nonPlayerList):
+        self.surface = surface
+        self.player = player
+        self.map = map
+        self.nonPlayerList = nonPlayerList
+    
+    def genEnemy(self, coords):
+        randomNum = tcod.random_get_int(0,1,100)
+
+        if randomNum > 15: 
+            crabEnemy = genCrab(coords, self.surface, self.player, self.map, self.nonPlayerList)
+            crabEnemyActor = crabEnemy.generate()
+            self.nonPlayerList.append(crabEnemyActor)
+            return crabEnemyActor
+        else: 
+            cobraEnemy = genCobra(coords, self.surface, self.player, self.map, self.nonPlayerList)
+            cobraEnemyActor = cobraEnemy.generate()
+            self.nonPlayerList.append(cobraEnemyActor)
+            return cobraEnemyActor
+
+class genCrab:
+    def __init__(self,coords, surface, player, map, nonPlayerList):
+        self.coords = coords
+        self.player = player
+        self.map = map
+        self.surface = surface
+        self.itemActor = None
+        self.nonPlayerList = nonPlayerList
+    
+    def generate(self):
+        x,y = self.coords
+        CorpseItem = Item(None, self.player, healOrDamageVal = 5)
+
+        maxHealth = tcod.random_get_int(0,7,10)
+        baseAttck = tcod.random_get_int(0,1,2)
+
+        enemyCreature = Creature("Mr. Crabs", maxHealth, baseAttck)
+        aiCom = AIChase()
+        self.itemActor = Actor(x,y, constants.mainEnemySprite, self.surface, self.map, self.nonPlayerList, "Crab", enemyCreature ,item = CorpseItem, ai = aiCom)
+        return self.itemActor
+
+class genCobra:
+    def __init__(self,coords, surface, player, map, nonPlayerList):
+        self.coords = coords
+        self.player = player
+        self.map = map
+        self.surface = surface
+        self.itemActor = None
+        self.nonPlayerList = nonPlayerList
+    
+    def generate(self):
+        x,y = self.coords
+        CorpseItem = Item(None, self.player, healOrDamageVal = 8)
+        
+        maxHealth = tcod.random_get_int(0,12,14)
+        baseAttck = tcod.random_get_int(0,2,4)
+
+        enemyCreature = Creature("Buns", hp = maxHealth, baseAtck = baseAttck)
+        aiCom = AIChase()
+        self.itemActor = Actor(x,y, constants.rareCobraSprite, self.surface, self.map, self.nonPlayerList, "Cobra", enemyCreature, item = CorpseItem, ai = aiCom)
+        return self.itemActor
+
+class randomItemGeneration:
     def __init__(self,surface, player, map, nonPlayerList):
         self.surface = surface
         self.player = player
@@ -156,7 +235,7 @@ class menu():
         while not menuClose:
             printList = [obj.displayName for obj in self.player.container.inventory]
 
-            drawInv = drawText(inventorySurface, "blah", constants.colorWhite,
+            drawInv = drawText(inventorySurface, "", constants.colorWhite,
                                    (0,0+1))
             inventorySurface.fill(constants.colorBlack)
             
@@ -180,18 +259,42 @@ class menu():
                             mouseLineSelection <= len(printList)-1):
                               if(len(gameMessages) > 0):
                                   if self.player.container.inventory[mouseLineSelection].item != None:
-                                     
-                                     gameMessages.append(self.player.container.inventory[mouseLineSelection].item.use(self.nonPlayerList))
-                                     menuClose = True
+                                    useMessages = self.player.container.inventory[mouseLineSelection].item.use(self.nonPlayerList)
+                                    if (isinstance(useMessages, list)):
+                                        print("BLAH")
+                                        gameMessages = gameMessages + useMessages
+                                    else:
+                                        print("BLAHHHHHH")
+                                        gameMessages.append(useMessages)
+                                    menuClose = True
                                   else:
-                                     gameMessages.append(self.player.container.inventory[mouseLineSelection].equipment.use(self.nonPlayerList))
+                                    useMessages = self.player.container.inventory[mouseLineSelection].equipment.use(self.nonPlayerList)
+                                    if (isinstance(useMessages, list)):
+                                        print("BLAH")
+                                        gameMessages = gameMessages + useMessages
+                                    else:
+                                        print("BLAHHHHHH")
+                                        gameMessages.append(useMessages)
                               else:
                                   if self.player.container.inventory[mouseLineSelection].item != None:
                                      
-                                     menuClose = True
-                                     gameMessages = [self.player.container.inventory[mouseLineSelection].item.use(self.nonPlayerList)]
+                                    useMessages = self.player.container.inventory[mouseLineSelection].item.use(self.nonPlayerList)
+                                    if (isinstance(useMessages, list)):
+                                        print("BLAH")
+                                        gameMessages = gameMessages + useMessages
+                                    else:
+                                        print("BLAHHHHHH")
+                                        gameMessages.append(useMessages)
+                                    menuClose = True
                                   else:
-                                     gameMessages = [self.player.container.inventory[mouseLineSelection].equipment.use(self.nonPlayerList)]
+                                      
+                                    useMessages = self.player.container.inventory[mouseLineSelection].equipment.use(self.nonPlayerList)
+                                    if (isinstance(useMessages, list)):
+                                        print("BLAH")
+                                        gameMessages = gameMessages + useMessages
+                                    else:
+                                        print("BLAHHHHHH")
+                                        gameMessages.append(useMessages)
 
             #draws inventory items on inv menu
             for line , (name) in enumerate(printList):
@@ -424,11 +527,8 @@ class Creature:
         self.hp = self.hp - damage + self.defense
         
         if(self.hp <=0):
-            if self.owner.ai:
-                return self.owner.ai.deathFunction()
-            else:
-                #TO FINISH
-                print("You are dead")
+            return self.deathFunction()
+            
     def attack(self, target):
         return target.creature.takeDamage(self.power)
     @property 
@@ -451,6 +551,12 @@ class Creature:
                 totalDefense += bonus
         return totalDefense
     
+    def deathFunction(self):
+        gameMessage = self.owner.displayName + " is dead!"
+        self.owner.creature = None
+        self.owner.ai = None
+        return gameMessage
+
     def restoreHP(self, value):
         if(self.hp == self.maxHp):
             return "At full hp"
@@ -519,7 +625,7 @@ class Item:
                 targets = self.player.map.map_objects_atcoords(x,y, nonPlayerList)
 
                 for target in targets:
-                    gameMessages = "lightning spell did " + str(value) + " damage to " + target.displayName
+                    gameMessages.append("lightning spell did " + str(value) + " damage to " + target.displayName)
                     if target.creature:
                         target.creature.takeDamage(value)
         else:
@@ -641,11 +747,6 @@ class AI:
     def takeTurn(self):
         message = self.owner.move(tcod.random_get_int(0,-1,1), tcod.random_get_int(0,-1,1))
         return message
-    def deathFunction(self):
-        gameMessage = self.owner.displayName + " is dead!"
-        self.owner.creature = None
-        self.owner.ai = None
-        return gameMessage
 
 class AIChase(AI):
     
@@ -832,41 +933,31 @@ class GameRunner:
     def __init__(self):
         pygame.init()
         pygame.key.set_repeat(200, 70)
-        self.gameMessages = []
-        self.ai = AIChase()
-        self.ai1 = AIChase()
-        self.playerInv = Container()
         self.clock = pygame.time.Clock()
         self.surfaceMain = pygame.display.set_mode( (constants.mapWidth*constants.cellWidth,constants.mapHeight*constants.cellHeight) )
         self.fovCalculate = True
-
+        self.gameMessages = []
         self.map = Map(self.fovCalculate, None)
-
-        self.playerCreature = Creature("Python", hp=15)
-        self.enemyCreature = Creature("Mr.Krabs")
-        self.enemyCreature1 = Creature("Crabby")
-
-        self.itemCom1 = Item(None, None, healOrDamageVal = 5)
-        self.itemCom2 = Item(None, None, healOrDamageVal = 5)
-
-        self.mainEnemy = Actor(15,15,constants.mainEnemySprite, self.surfaceMain, self.map, [], "Crab", self.enemyCreature, self.ai, item = self.itemCom1)
-        self.mainEnemy2 = Actor(15,15,constants.mainEnemySprite, self.surfaceMain, self.map, [], "Crab", self.enemyCreature1, self.ai1, item = self.itemCom2)
-        self.enemyList = [self.mainEnemy, self.mainEnemy2]
+        #ADD RANDOM NAME GENERATION WITH CFG FILE
+        #tcod.namegen_parse()
         
-        self.player = Actor(1,1,constants.playerSprite, self.surfaceMain, self.map, self.enemyList, "Player", self.playerCreature, None, self.playerInv)
-       
-        self.GameDrawer = GameDraw(self.surfaceMain,self.player, self.map, self.enemyList, self.clock, self.gameMessages)
+        self.nonPlayerList = []
+
+        self.playerGen = genPlayer(self.surfaceMain, self.map, self.nonPlayerList)
+        self.player = self.playerGen.generate((1,1))
+
+
+        self.enemyGenerator = genEnemies(self.surfaceMain, self.player, self.map, self.nonPlayerList)
+        self.enemyGenerator.genEnemy((15,17))
+        self.enemyGenerator.genEnemy((15,16))
+
+        self.GameDrawer = GameDraw(self.surfaceMain,self.player, self.map, self.nonPlayerList, self.clock, self.gameMessages)
         
-        self.menu = menu(self.surfaceMain, self.player, self.enemyList, self.GameDrawer)
-        
-        self.mainEnemy.enemyList = [self.player, self.mainEnemy2]
-        self.mainEnemy2.enemyList = [self.player, self.mainEnemy]
+        self.menu = menu(self.surfaceMain, self.player, self.nonPlayerList, self.GameDrawer)
 
         self.map.player = self.player
-        self.itemCom1.player = self.player
-        self.itemCom2.player = self.player
 
-        self.genItems = randomItemGeneration(self.surfaceMain, self.player, self.map, self.enemyList)
+        self.genItems = randomItemGeneration(self.surfaceMain, self.player, self.map, self.nonPlayerList)
         self.genItems.genItem((2,2))
         self.genItems.genItem((2,3))
         self.genItems.genItem((2,4))
@@ -883,7 +974,7 @@ class GameRunner:
                 gameQuitStatus = True
 
             if playerAction != "no-action":
-                for enemy in self.enemyList:
+                for enemy in self.nonPlayerList:
                     if( hasattr(enemy, "ai") and enemy.ai != None):
                         gameMessage = enemy.getai().takeTurn()
                         if gameMessage != []:
@@ -897,7 +988,6 @@ class GameRunner:
 
     def gameMessagesAppend(self, gameMessage, msgColor):
         self.gameMessages.append((gameMessage,msgColor))
-       # self.GameDrawer.gameMessages.append((gameMessage,msgColor))
      
     def handleKeys(self):
         events = pygame.event.get()
