@@ -16,7 +16,7 @@ class genPlayer:
 
     def generate(self, coords):
         x,y = coords
-        playerCreature = Creature("Python", 15)
+        playerCreature = Creature("Python", 15, baseAtck=3)
         playerInv = Container()
         player = Actor(x,y,constants.playerSprite, self.surface, self.map, self.nonPlayerList, "Player", playerCreature, None, playerInv)
         self.nonPlayerList.append(player)
@@ -58,7 +58,7 @@ class genCrab:
         CorpseItem = Item(None, self.player, healOrDamageVal = 5)
 
         maxHealth = tcod.random_get_int(0,7,10)
-        baseAttck = tcod.random_get_int(0,1,2)
+        baseAttck = tcod.random_get_int(0,2,3)
 
         enemyCreature = Creature("Mr. Crabs", maxHealth, baseAttck)
         aiCom = AIChase()
@@ -520,7 +520,7 @@ class Creature:
     def setOwner(self, owner):
         self.owner = owner
     def takeDamage(self, damage):
-        self.hp = self.hp - damage + self.defense
+        self.hp = min(self.maxHp, self.hp - damage + self.defense)
         
         if(self.hp <=0):
             return self.deathFunction()
@@ -907,11 +907,6 @@ class Map:
                   self.createTunnels(currentCenter, previousCenter)
                 self.listOfRooms.append(newRoom)
         self.makeFOV()
-       # for x in range(0, constants.mapWidth):
-         #   print("ONE ROW OF COORDS")
-          #  for y in range(0, constants.mapHeight):
-            #    print(str(self.map[x][y].blockPath) + " ", end='')
-       # print(self.listOfRooms)
 
     def createTunnels(self, coords1, coords2):
         #change var name later
@@ -935,7 +930,6 @@ class Map:
             for y in range(newRoom.y, newRoom.y2):
                 self.map[x][y].blockPath = False
                
-
     def getCurrentMap(self):
         return self.map
     
@@ -992,6 +986,7 @@ class Map:
             if calcX == x2 and calcY == y2:
                 return coordList
             calcX, calcY = tcod.line_step()
+    
     def checkForWall(self, x, y):
         return self.map[x][y].blockPath
 
@@ -1005,9 +1000,11 @@ class GameRunner:
         self.fovCalculate = True
         self.gameMessages = []
         self.nonPlayerList = []
+
         self.map = Map(self.fovCalculate, self.nonPlayerList, self.surfaceMain)
+        self.currentRooms = self.map.listOfRooms
+
         self.playerGen = genPlayer(self.surfaceMain, self.map, self.nonPlayerList)
-        print(self.map.listOfRooms[0].center())
         self.player = self.playerGen.generate(self.map.listOfRooms[0].center())
 
         self.GameDrawer = GameDraw(self.surfaceMain,self.player, self.map, self.nonPlayerList, self.clock, self.gameMessages)
@@ -1016,6 +1013,27 @@ class GameRunner:
 
         self.map.player = self.player
 
+        self.placeObjects()
+
+    #method to place objects on map, may be moved to a different class later
+    def placeObjects(self):
+
+        for i, room in enumerate(self.currentRooms):
+
+            if i !=0:
+                x = tcod.random_get_int(0, room.x+1, room.x2 - 1)
+                y = tcod.random_get_int(0, room.y+1, room.y2 - 1)
+
+                newEnemy = genEnemies(self.surfaceMain, self.player, self.map, self.nonPlayerList)
+                newEnemy.genEnemy((x,y))
+ 
+            x = tcod.random_get_int(0, room.x+1, room.x2 - 1)
+            y = tcod.random_get_int(0, room.y+1, room.y2 - 1)
+
+            if (x,y) is not (self.player.x , self.player.y): 
+
+                newItem = randomItemGeneration(self.surfaceMain, self.player, self.map, self.nonPlayerList)
+                newItem.genItem((x,y))
 
     def game_main_loop(self):
  
