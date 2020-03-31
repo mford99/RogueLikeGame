@@ -261,39 +261,35 @@ class menu():
                                   if self.player.container.inventory[mouseLineSelection].item != None:
                                     useMessages = self.player.container.inventory[mouseLineSelection].item.use(self.nonPlayerList)
                                     if (isinstance(useMessages, list)):
-                                        print("BLAH")
                                         gameMessages = gameMessages + useMessages
                                     else:
-                                        print("BLAHHHHHH")
                                         gameMessages.append(useMessages)
                                     menuClose = True
                                   else:
                                     useMessages = self.player.container.inventory[mouseLineSelection].equipment.use(self.nonPlayerList)
                                     if (isinstance(useMessages, list)):
-                                        print("BLAH")
                                         gameMessages = gameMessages + useMessages
                                     else:
-                                        print("BLAHHHHHH")
                                         gameMessages.append(useMessages)
                               else:
                                   if self.player.container.inventory[mouseLineSelection].item != None:
                                      
                                     useMessages = self.player.container.inventory[mouseLineSelection].item.use(self.nonPlayerList)
                                     if (isinstance(useMessages, list)):
-                                        print("BLAH")
+                                      
                                         gameMessages = gameMessages + useMessages
                                     else:
-                                        print("BLAHHHHHH")
+                                       
                                         gameMessages.append(useMessages)
                                     menuClose = True
                                   else:
                                       
                                     useMessages = self.player.container.inventory[mouseLineSelection].equipment.use(self.nonPlayerList)
                                     if (isinstance(useMessages, list)):
-                                        print("BLAH")
+                                       
                                         gameMessages = gameMessages + useMessages
                                     else:
-                                        print("BLAHHHHHH")
+                                       
                                         gameMessages.append(useMessages)
 
             #draws inventory items on inv menu
@@ -848,25 +844,97 @@ class drawText:
         return self.textRect.height
     def textWidth(self):
         return self.textRect.width
-   
+
+#class for a singular rectangle room
+class RectRoom:
+    def __init__(self,coords, size):
+        self.x, self.y = coords
+        self.width, self.height = size
+        self.x2 = self.x + self.width
+        self.y2 = self.y + self.height
+    
+    #method to get center coords of the room
+    def center(self):
+        centerX = (self.x2 + self.x)//2
+        centerY = (self.y2 + self.y)//2
+        return ((centerX, centerY))
+    
+    #method to check if object intercepts another one
+    #returns true if two objects intersect
+    def intersect(self, other):
+
+        objectsIntersect = (self.x <= other.x2 and self.x2 >= other.x and 
+                             self.y <= other.y2 and self.y2 >= other.y)
+        
+        return objectsIntersect
+
 #class to handle the game's map
 class Map:
-    def __init__(self, fovCalculate, player):
+    def __init__(self, fovCalculate, nonPlayerList, surface, player= None):
+        # constructor uses tunnelling algorithm to create rooms
         self.fovCalculate = fovCalculate
         self.player = player
-        self.map = [[ tileStrucutre(False) for y in range(0,constants.mapWidth)] for x in range(0,constants.mapHeight)]
+        self.map = [[ tileStrucutre(True) for y in range(0,constants.mapHeight)] for x in range(0,constants.mapWidth)]
 
-        self.map[10][10].blockPath = True
-        self.map[10][15].blockPath = True
+        self.listOfRooms = []
 
-        for x in range(constants.mapWidth):
-            self.map[x][0].blockPath = True
-            self.map[x][constants.mapHeight-1].blockPath = True
-        for x in range(constants.mapHeight):
-            self.map[0][x].blockPath = True
-            self.map[constants.mapHeight-1][x].blockPath = True
-    
+        for i in range(0, constants.mapMaxNumRooms):
+            
+            w = tcod.random_get_int(0, constants.roomMinWidth, constants.roomMaxWidth)
+            h = tcod.random_get_int(0, constants.roomMinHeight, constants.roomMaxHeight)
+            
+            x = tcod.random_get_int(0, 2, constants.mapWidth - w -2)
+            y = tcod.random_get_int(0, 2, constants.mapHeight - h -2)
+
+            print(x,y,w,h)
+            newRoom = RectRoom((x,y), (w,h))
+
+            failed = False
+
+            for otherRoom in self.listOfRooms:
+                if newRoom.intersect(otherRoom):
+                    failed = True
+                    break
+           
+            if not failed:
+                self.createRoom(newRoom)
+                currentCenter = newRoom.center()
+
+                if (len(self.listOfRooms) != 0):
+                  previousCenter = self.listOfRooms[-1].center()
+
+                  # dig tunnels
+                  self.createTunnels(currentCenter, previousCenter)
+                self.listOfRooms.append(newRoom)
         self.makeFOV()
+       # for x in range(0, constants.mapWidth):
+         #   print("ONE ROW OF COORDS")
+          #  for y in range(0, constants.mapHeight):
+            #    print(str(self.map[x][y].blockPath) + " ", end='')
+       # print(self.listOfRooms)
+
+    def createTunnels(self, coords1, coords2):
+        #change var name later
+        coinFlip = (tcod.random_get_int(0,0,1) ==1)
+
+        x1, y1 = coords1
+        x2, y2 = coords2
+        if coinFlip:
+            for x in range(min(x1,x2), max(x1, x2) + 1):
+                self.map[x][y1].blockPath = False
+            for y in range(min(y1,y2), max(y1, y2) + 1):
+                self.map[x2][y].blockPath = False
+        else:
+            for y in range(min(y1,y2), max(y1, y2) + 1):
+                self.map[x1][y].blockPath = False
+            for x in range(min(x1,x2), max(x1, x2) + 1):
+                self.map[x][y2].blockPath = False
+
+    def createRoom(self, newRoom):
+        for x in range(newRoom.x, newRoom.x2):
+            for y in range(newRoom.y, newRoom.y2):
+                self.map[x][y].blockPath = False
+               
 
     def getCurrentMap(self):
         return self.map
@@ -890,7 +958,6 @@ class Map:
                         surface.blit(constants.floorExploredSprite, ( x*constants.cellWidth, y*constants.cellHeight))
     def makeFOV(self):
             self.FOVMAP = tcod.map_new(constants.mapWidth, constants.mapHeight)
-
             for y in range(constants.mapHeight):
                 for x in range(constants.mapWidth):
                     tcod.map_set_properties(self.FOVMAP, x, y, not self.map[x][y].blockPath, not self.map[x][y].blockPath)
@@ -937,30 +1004,17 @@ class GameRunner:
         self.surfaceMain = pygame.display.set_mode( (constants.mapWidth*constants.cellWidth,constants.mapHeight*constants.cellHeight) )
         self.fovCalculate = True
         self.gameMessages = []
-        self.map = Map(self.fovCalculate, None)
-        #ADD RANDOM NAME GENERATION WITH CFG FILE
-        #tcod.namegen_parse()
-        
         self.nonPlayerList = []
-
+        self.map = Map(self.fovCalculate, self.nonPlayerList, self.surfaceMain)
         self.playerGen = genPlayer(self.surfaceMain, self.map, self.nonPlayerList)
-        self.player = self.playerGen.generate((1,1))
-
-
-        self.enemyGenerator = genEnemies(self.surfaceMain, self.player, self.map, self.nonPlayerList)
-        self.enemyGenerator.genEnemy((15,17))
-        self.enemyGenerator.genEnemy((15,16))
+        print(self.map.listOfRooms[0].center())
+        self.player = self.playerGen.generate(self.map.listOfRooms[0].center())
 
         self.GameDrawer = GameDraw(self.surfaceMain,self.player, self.map, self.nonPlayerList, self.clock, self.gameMessages)
         
         self.menu = menu(self.surfaceMain, self.player, self.nonPlayerList, self.GameDrawer)
 
         self.map.player = self.player
-
-        self.genItems = randomItemGeneration(self.surfaceMain, self.player, self.map, self.nonPlayerList)
-        self.genItems.genItem((2,2))
-        self.genItems.genItem((2,3))
-        self.genItems.genItem((2,4))
 
 
     def game_main_loop(self):
