@@ -94,7 +94,7 @@ class randomItemGeneration:
         self.nonPlayerList = nonPlayerList
     
     def genItem(self, coords):
-        randomNum = tcod.random_get_int(0,1,4)
+        randomNum = tcod.random_get_int(0,1,5)
 
         if randomNum == 1: 
             lightningSpell = genLighting(coords, self.surface, self.player, self.map)
@@ -116,6 +116,11 @@ class randomItemGeneration:
             shieldActor = shield.generate()
             self.nonPlayerList.append(shieldActor)
             return shieldActor
+        if randomNum == 5: 
+            FireSpell = genFireballSpell(coords, self.surface, self.player, self.map)
+            FireballSpellActor = FireSpell.generate()
+            self.nonPlayerList.append(FireballSpellActor)
+            return FireballSpellActor
 
 class genSword():
     
@@ -178,15 +183,29 @@ class genConfusionSpell():
     def generate(self):
         x,y = self.coords
         numTurns = tcod.random_get_int(0, 2, 4)
-        ConfusionItem = Item(owner=None, player=self.player, healOrDamageVal= numTurns )
+        ConfusionItem = Item(owner=None, player=self.player, healOrDamageVal= numTurns)
 
         self.itemActor = Actor(x,y, constants.confusionScrollSprite, self.surface, self.map, [], "Confusion Scroll", item = ConfusionItem)
 
         return self.itemActor
 
 #CLASS FOR FIREBALL GENERATION FOR STEFAN TO DO
+class genFireballSpell():
 
+    def __init__(self,coords, surface, player, map):
+        self.coords = coords
+        self.player = player
+        self.map = map
+        self.surface = surface
+        self.itemActor = None
+    def generate(self):
+        x,y = self.coords
+        damage = 5
+        FireballItem = Item(owner=None, player=self.player, healOrDamageVal= damage)
 
+        self.itemActor = Actor(x,y, constants.fireballSprite, self.surface, self.map, [], "Fireball Scroll", item = FireballItem)
+
+        return self.itemActor
 
 #class for a menu such as an inventory menu and a menu that pauses the game
 class menu():
@@ -322,7 +341,7 @@ class targetselect:
         self.map = map
         self.nonPlayerList = nonPlayerList
 
-    def menu_target_select(self, coordsOrigin = None, maxRange = None, penetrateWalls = True, mark = None):
+    def menu_target_select(self, coordsOrigin = None, maxRange = None, penetrateWalls = True, mark = None, pierce_creature = True, radius = None):
         menuClose = False
         while not menuClose:
             #get mouse position
@@ -342,8 +361,10 @@ class targetselect:
                     x,y = coords
                     validListTiles.append((x,y))
                     if maxRange and i == maxRange-1:
-                         break
+                        break
                     if not penetrateWalls and (self.map.checkForWall(x,y)):
+                        break
+                    if not pierce_creature and (self.map.map_objects_atcoords(x,y,self.nonPlayerList)):
                         break
 
             else:
@@ -378,6 +399,10 @@ class targetselect:
                 x,y = coords
                 if coords == validListTiles[-1]:
                     self.draw_tile_rect((x,y), mark, center)
+                if radius:
+                    area_effect = self.map.mapRadiusCreate(validListTiles[-1], radius)
+                    for (x,y) in area_effect:
+                        self.draw_tile_rect((x, y))
                 else:
                      self.draw_tile_rect((x,y))
             pygame.display.flip()
@@ -606,6 +631,8 @@ class Item:
             useResult = self.lightingSpell(self.value, nonPlayerList)
         elif self.owner.objName == "Confusion Scroll":
             useResult = self.confusionSpell(self.value, nonPlayerList)
+        elif self.owner.objName == "Fireball Scroll":
+            useResult = self.FireballSpell(self.value, nonPlayerList)
         else:
             useResult = self.player.creature.restoreHP(self.value)
         if useResult != "Spell cancelled" and useResult != "At full hp":
@@ -652,6 +679,26 @@ class Item:
         else:
             gameMessage = "Spell cancelled"
         return gameMessage
+
+    def FireballSpell(self, damage, nonPlayerList):
+        
+        targetSelections = targetselect(self.player.surface, self.player, self.player.map, nonPlayerList)
+        pointSelected = targetSelections.menu_target_select((self.player.x, self.player.y),maxRange = 5, mark = "X", penetrateWalls= False, pierce_creature = False, radius= 1)
+        creature_hit = False
+        gameMessages = []
+        if pointSelected:
+            tiles_to_dmg = self.player.map.mapRadiusCreate(pointSelected, 1)
+            for (x, y) in tiles_to_dmg:
+                creatures_to_damage = self.player.map.map_objects_atcoords(x, y, nonPlayerList)
+
+                for enemy in creatures_to_damage:
+                    enemy.creature.takeDamage(damage)
+                    if enemy is not self.player:
+                        gameMessages.append("Fireball spell did " + str(damage) + " damage to " + enemy.displayName)
+        else:
+            gameMessages = "Spell cancelled"
+        return gameMessages
+
 
 class Equipment:
 
@@ -927,6 +974,21 @@ class Map:
             calcX, calcY = tcod.line_step()
     def checkForWall(self, x, y):
         return self.map[x][y].blockPath
+
+    def mapRadiusCreate(self, coords, radius):
+        center_x, center_y = coords
+
+        tile_list = []
+
+        start_x = (center_x - radius)
+        end_x = (center_x + radius + 1)
+
+        start_y = (center_y - radius)
+        end_y = (center_y + radius + 1)
+        for x in range(start_x,end_x):
+            for y in range (start_y,end_y):
+                tile_list.append((x,y))
+        return tile_list
 
 #Main Game class with main game loop
 class GameRunner:
