@@ -58,7 +58,7 @@ class genCrab:
     
     def generate(self):
         x,y = self.coords
-        CorpseItem = Item(None, self.player, healOrDamageVal = 5)
+        CorpseItem = Item(None, self.player, healOrDamageVal = 5, camera = None)
 
         maxHealth = tcod.random_get_int(0,7,10)
         baseAttck = tcod.random_get_int(0,2,3)
@@ -80,7 +80,7 @@ class genCobra:
 
     def generate(self):
         x,y = self.coords
-        CorpseItem = Item(None, self.player, healOrDamageVal = 8)
+        CorpseItem = Item(None, self.player, healOrDamageVal = 8, camera=None)
         
         maxHealth = tcod.random_get_int(0,12,14)
         baseAttck = tcod.random_get_int(0,2,4)
@@ -98,17 +98,17 @@ class randomItemGeneration:
         self.nonPlayerList = nonPlayerList
         self.surfaceMap = surfaceMap
     
-    def genItem(self, coords):
+    def genItem(self, coords, camera):
         randomNum = tcod.random_get_int(0,1,5)
 
         if randomNum == 1: 
             lightningSpell = genLighting(coords, self.surface, self.player, self.map, self.surfaceMap)
-            lightningSpellActor = lightningSpell.generate()
+            lightningSpellActor = lightningSpell.generate(camera)
             self.nonPlayerList.append(lightningSpellActor)
             return lightningSpellActor
         if randomNum == 2: 
             confusionSpell = genConfusionSpell(coords, self.surface, self.player, self.map, self.surfaceMap)
-            confusionSpellActor = confusionSpell.generate()
+            confusionSpellActor = confusionSpell.generate(camera)
             self.nonPlayerList.append(confusionSpellActor)
             return confusionSpellActor
         if randomNum == 3: 
@@ -123,7 +123,7 @@ class randomItemGeneration:
             return shieldActor
         if randomNum == 5: 
             FireSpell = genFireballSpell(coords, self.surface, self.player, self.map, self.surfaceMap)
-            FireballSpellActor = FireSpell.generate()
+            FireballSpellActor = FireSpell.generate(camera=camera)
             self.nonPlayerList.append(FireballSpellActor)
             return FireballSpellActor
 
@@ -171,10 +171,10 @@ class genLighting():
         self.itemActor = None
         self.surfaceMap = surfaceMap
     
-    def generate(self):
+    def generate(self, camera):
         x,y = self.coords
         damage = tcod.random_get_int(0, 5, 7)
-        LightningItem = Item(owner=None, player=self.player, healOrDamageVal= damage)
+        LightningItem = Item(owner=None, player=self.player, healOrDamageVal= damage, camera=camera)
 
         self.itemActor = Actor(x,y, constants.lightningScrollSprite, self.surface, self.map, [], "Lighting Scroll", item = LightningItem, surfaceMap = self.surfaceMap)
         return self.itemActor
@@ -188,10 +188,10 @@ class genConfusionSpell():
         self.surface = surface
         self.itemActor = None
         self.surfaceMap = surfaceMap
-    def generate(self):
+    def generate(self, camera):
         x,y = self.coords
         numTurns = tcod.random_get_int(0, 2, 4)
-        ConfusionItem = Item(owner=None, player=self.player, healOrDamageVal= numTurns)
+        ConfusionItem = Item(owner=None, player=self.player, healOrDamageVal= numTurns, camera= camera)
 
         self.itemActor = Actor(x,y, constants.confusionScrollSprite, self.surface, self.map, [], "Confusion Scroll", item = ConfusionItem, surfaceMap = self.surfaceMap)
 
@@ -207,10 +207,10 @@ class genFireballSpell():
         self.surface = surface
         self.itemActor = None
         self.surfaceMap = surfaceMap
-    def generate(self):
+    def generate(self, camera):
         x,y = self.coords
         damage = 5
-        FireballItem = Item(owner=None, player=self.player, healOrDamageVal= damage)
+        FireballItem = Item(owner=None, player=self.player, healOrDamageVal= damage, camera= camera)
 
         self.itemActor = Actor(x,y, constants.fireballSprite, self.surface, self.map, [], "Fireball Scroll", item = FireballItem, surfaceMap = self.surfaceMap)
 
@@ -218,14 +218,15 @@ class genFireballSpell():
 
 #class for a menu such as an inventory menu and a menu that pauses the game
 class menu():
-    def __init__(self,surface, player, nonPlayerList, GameDrawer = None):
+    def __init__(self,surface, player, nonPlayerList, surfaceMap, GameDrawer = None):
         self.surface = surface
         self.player = player
         self.nonPlayerList = nonPlayerList
+        self.surfaceMap = surfaceMap
     def menuPause(self):
 
-        windowsWidth = constants.mapWidth* constants.cellWidth
-        windowsHeight = constants.mapHeight * constants.cellHeight
+        windowsWidth = constants.cameraWidth
+        windowsHeight = constants.cameraHeight
         menuText = "PAUSED PRESS P TO UNPAUSE"
         menuClose = False
         while not menuClose:
@@ -250,8 +251,8 @@ class menu():
         gameMessages = []
         menuWidth = 250
         menuHeight = 200
-        windowsWidth = constants.mapWidth* constants.cellWidth
-        windowsHeight = constants.mapHeight * constants.cellHeight
+        windowsWidth = constants.cameraWidth
+        windowsHeight = constants.cameraHeight
         inventorySurface = pygame.Surface((menuWidth,menuHeight))
 
         menuX = windowsWidth/2 - menuWidth/2
@@ -287,13 +288,14 @@ class menu():
                             mouseLineSelection <= len(printList)-1):
                               if(len(gameMessages) > 0):
                                   if self.player.container.inventory[mouseLineSelection].item != None:
+                                    menuClose = True
                                     useMessages = self.player.container.inventory[mouseLineSelection].item.use(self.nonPlayerList)
                                     if (isinstance(useMessages, list)):
                                         gameMessages = gameMessages + useMessages
                                     else:
                                         gameMessages.append(useMessages)
-                                    menuClose = True
                                   else:
+                                    menuClose = True
                                     useMessages = self.player.container.inventory[mouseLineSelection].equipment.use(self.nonPlayerList)
                                     if (isinstance(useMessages, list)):
                                         gameMessages = gameMessages + useMessages
@@ -302,6 +304,7 @@ class menu():
                               else:
                                   if self.player.container.inventory[mouseLineSelection].item != None:
                                      
+                                    menuClose = True
                                     useMessages = self.player.container.inventory[mouseLineSelection].item.use(self.nonPlayerList)
                                     if (isinstance(useMessages, list)):
                                       
@@ -309,9 +312,9 @@ class menu():
                                     else:
                                        
                                         gameMessages.append(useMessages)
-                                    menuClose = True
                                   else:
                                       
+                                    menuClose = True
                                     useMessages = self.player.container.inventory[mouseLineSelection].equipment.use(self.nonPlayerList)
                                     if (isinstance(useMessages, list)):
                                        
@@ -340,12 +343,13 @@ class menu():
 
 #class for selecting a target on the screen       
 class targetselect:
-    def __init__(self,surface, actor, map, nonPlayerList, surfaceMap):
+    def __init__(self,surface, actor, map, nonPlayerList, surfaceMap, camera):
         self.surface = surface
         self.player = actor
         self.map = map
         self.nonPlayerList = nonPlayerList
         self.surfaceMap = surfaceMap
+        self.camera = camera
 
     def menu_target_select(self, coordsOrigin = None, maxRange = None, penetrateWalls = True, mark = None, pierce_creature = True, radius = None):
         menuClose = False
@@ -355,9 +359,13 @@ class targetselect:
             #get button clicks
             events_list = pygame.event.get()
             
-            mouse_x_rel = mouse_x//constants.cellWidth
-            mouse_y_rel = mouse_y//constants.cellHeight
+            mapPixelX, mapPixelY = self.camera.winToMap((mouse_x, mouse_y))
 
+            mouse_x_rel = int(mapPixelX//constants.cellWidth)
+            mouse_y_rel = int(mapPixelY//constants.cellHeight)
+
+            print(mouse_x_rel, mouse_y_rel)
+            print(coordsOrigin)
             fullListTiles = []
             validListTiles = []
             if coordsOrigin:
@@ -386,14 +394,19 @@ class targetselect:
                         return validListTiles[-1]
             
                 
-            self.surface.fill(constants.colorDefaultBG)
+        self.surface.fill(constants.colorBlack)
+        
+        self.surfaceMap.fill(constants.colorBlack)
+                
+        self.camera.update()
 
-            self.map.drawToMap(self.surface)
+        self.map.drawToMap(self.surfaceMap)
 
-            for obj in self.nonPlayerList:
-                isVisble = tcod.map_is_in_fov(self.map.FOVMAP,obj.x, obj.y)
-                if isVisble:
-                 obj.draw()
+
+        for obj in self.nonPlayerList:
+            isVisble = tcod.map_is_in_fov(self.map.FOVMAP,obj.x, obj.y)
+            if isVisble:
+                obj.draw()
 
             center = False
             if mark:
@@ -401,6 +414,8 @@ class targetselect:
 
             #may need to change later for firespell and lighting spell
             self.player.draw()
+            self.player.draw()
+            self.surface.blit(self.surfaceMap, (0,0), self.camera.rectangle)
             for coords in validListTiles:
                 x,y = coords
                 if coords == validListTiles[-1]:
@@ -425,7 +440,7 @@ class targetselect:
             drawX = drawText(new_surface, mark, constants.colorRed, (constants.cellWidth/2,constants.cellHeight/2))
             drawX.drawOnSurface(incomingFont=constants.fontCursorText, center=center)
             
-        self.surfaceMap .blit(new_surface,(new_x,new_y))
+        self.surfaceMap.blit(new_surface,(new_x,new_y))
 
 class Camera:
 
@@ -435,10 +450,6 @@ class Camera:
         self.x, self.y = (0,0)
         self.player = player
     
-    def update(self):
-        self.x = (self.player.x * constants.cellWidth) + (constants.cellWidth/2)
-        self.y = (self.player.y * constants.cellHeight) + (constants.cellHeight/2)
-
     @property
     def rectangle(self):
 
@@ -447,6 +458,56 @@ class Camera:
         posRect.center = (self.x, self.y)
 
         return posRect
+    
+    @property
+    def mapAddress(self):
+
+        mapX = self.x//constants.cellWidth
+        mapY = self.y//constants.cellHeight
+
+        return (mapX, mapY)
+
+    def update(self):
+        
+        targetX = (self.player.x * constants.cellWidth) + (constants.cellWidth/2)
+        targetY = (self.player.y * constants.cellHeight) + (constants.cellHeight/2)
+        
+        distanceX, distanceY = self.mapDistance((targetX, targetY))
+
+        self.x += int(distanceX)
+        self.y += int(distanceY)
+
+    def mapDistance(self, coords):
+
+        newX, newY = coords
+        distX = newX - self.x      
+        distY = newY - self.y
+
+        return (distX, distY)
+    
+    def camDist(self, coords):
+        winX, winY = coords
+
+        distX = winX - (self.width/2)
+        distY = winY - (self.height/2)
+
+        return (distX, distY)
+    
+    def winToMap(self, coords):
+
+        targetX, targetY = coords
+
+        #convert window coords to distance from camera
+        camDX, camDY = self.camDist((targetX,targetY))
+
+        mapPX = self.x + camDX
+        mapPY = self.x + camDY
+
+        return((mapPX, mapPY))
+
+        #distance from cap -> map coord
+
+
 
 #baseclass for an actor. Actor being any object that can interact with a surface
 class Actor:
@@ -619,7 +680,7 @@ class Creature:
 
 #class for items. Item class contains different methods depending on what spells are in the game
 class Item:
-    def __init__(self, owner, player, nonPlayerList = None, weight = 0.0, volume = 0.0, healOrDamageVal = 0):
+    def __init__(self, owner, player, camera, nonPlayerList = None, weight = 0.0, volume = 0.0, healOrDamageVal = 0):
         self.weight = weight
         self.baseVolume = volume
         self.owner = owner
@@ -627,6 +688,7 @@ class Item:
         self.player = player
         self.value = healOrDamageVal
         self.nonPlayerList = nonPlayerList
+        self.camera = camera
     def pickUp(self, nonPlayerList):
         gameMessages = []
         if self.player.container:
@@ -669,7 +731,7 @@ class Item:
 
     def lightingSpell(self, value, nonPlayerList):
         
-        targetSelection = targetselect(self.player.surface, self.player, self.player.map, nonPlayerList, self.player.surfaceMap)
+        targetSelection = targetselect(self.player.surface, self.player, self.player.map, nonPlayerList, self.player.surfaceMap, self.camera)
         pointSelected = targetSelection.menu_target_select((self.player.x, self.player.y),5,False, mark="X")
         listOfTiles = []
         gameMessages = []
@@ -689,7 +751,7 @@ class Item:
     
     def confusionSpell(self, numTurns, nonPlayerList):
 
-        targetSelection = targetselect(self.player.surface, self.player, self.player.map, nonPlayerList, self.player.surfaceMap)
+        targetSelection = targetselect(self.player.surface, self.player, self.player.map, nonPlayerList, self.player.surfaceMap, self.camera)
         pointSelected = targetSelection.menu_target_select(mark="X")
 
         gameMessage = []
@@ -710,7 +772,7 @@ class Item:
 
     def FireballSpell(self, damage, nonPlayerList):
         
-        targetSelections = targetselect(self.player.surface, self.player, self.player.map, nonPlayerList, self.player.surfaceMap)
+        targetSelections = targetselect(self.player.surface, self.player, self.player.map, nonPlayerList, self.player.surfaceMap, self.camera)
         pointSelected = targetSelections.menu_target_select((self.player.x, self.player.y),maxRange = 5, mark = "X", penetrateWalls= False, pierce_creature = False, radius= 1)
         gameMessages = []
         if pointSelected:
@@ -863,9 +925,9 @@ class GameDraw:
 
     def drawGame(self):
 
-        self.surface.fill(constants.colorDefaultBG)
+        self.surface.fill(constants.colorBlack)
         
-        #self.surfaceMap.fill(constants.colorBlack)
+        self.surfaceMap.fill(constants.colorBlack)
         displayRect = pygame.Rect((50,50),(constants.cameraWidth, constants.cameraHeight) )
         
         self.camera.update()
@@ -1141,7 +1203,7 @@ class GameRunner:
             if (x,y) is not (self.player.x , self.player.y): 
 
                 newItem = randomItemGeneration(self.surfaceMain, self.player, self.map, self.nonPlayerList, self.surfaceMap)
-                newItem.genItem((x,y))
+                newItem.genItem((x,y), self.camera)
 
     def game_main_loop(self):
  
