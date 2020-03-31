@@ -426,7 +426,28 @@ class targetselect:
             drawX.drawOnSurface(incomingFont=constants.fontCursorText, center=center)
             
         self.surfaceMap .blit(new_surface,(new_x,new_y))
-              
+
+class Camera:
+
+    def __init__(self, player):
+        self.width = constants.cameraWidth
+        self.height = constants.cameraHeight   
+        self.x, self.y = (0,0)
+        self.player = player
+    
+    def update(self):
+        self.x = (self.player.x * constants.cellWidth) + (constants.cellWidth/2)
+        self.y = (self.player.y * constants.cellHeight) + (constants.cellHeight/2)
+
+    @property
+    def rectangle(self):
+
+        posRect = pygame.Rect((0,0), (constants.cameraWidth, constants.cameraHeight))
+
+        posRect.center = (self.x, self.y)
+
+        return posRect
+
 #baseclass for an actor. Actor being any object that can interact with a surface
 class Actor:
     def __init__(self, x, y, sprite, surface, map, enemyList, objName,creature = None, ai = None, container = None, item = None, equipment = None, surfaceMap = None):
@@ -648,7 +669,7 @@ class Item:
 
     def lightingSpell(self, value, nonPlayerList):
         
-        targetSelection = targetselect(self.player.surface, self.player, self.player.map, nonPlayerList)
+        targetSelection = targetselect(self.player.surface, self.player, self.player.map, nonPlayerList, self.player.surfaceMap)
         pointSelected = targetSelection.menu_target_select((self.player.x, self.player.y),5,False, mark="X")
         listOfTiles = []
         gameMessages = []
@@ -668,7 +689,7 @@ class Item:
     
     def confusionSpell(self, numTurns, nonPlayerList):
 
-        targetSelection = targetselect(self.player.surface, self.player, self.player.map, nonPlayerList)
+        targetSelection = targetselect(self.player.surface, self.player, self.player.map, nonPlayerList, self.player.surfaceMap)
         pointSelected = targetSelection.menu_target_select(mark="X")
 
         gameMessage = []
@@ -689,9 +710,8 @@ class Item:
 
     def FireballSpell(self, damage, nonPlayerList):
         
-        targetSelections = targetselect(self.player.surface, self.player, self.player.map, nonPlayerList)
+        targetSelections = targetselect(self.player.surface, self.player, self.player.map, nonPlayerList, self.player.surfaceMap)
         pointSelected = targetSelections.menu_target_select((self.player.x, self.player.y),maxRange = 5, mark = "X", penetrateWalls= False, pierce_creature = False, radius= 1)
-        creature_hit = False
         gameMessages = []
         if pointSelected:
             tiles_to_dmg = self.player.map.mapRadiusCreate(pointSelected, 1)
@@ -830,7 +850,7 @@ class AIConfuse(AI):
         return message      
 #class to update the game's UI by updating/drawing the screen
 class GameDraw:
-    def __init__(self,surface, actor, map, nonPlayerList, clock, messages):
+    def __init__(self,surface, actor, map, nonPlayerList, clock, messages, surfaceMap, camera):
         self.surface = surface
         self.player = actor
         self.map = map
@@ -838,9 +858,17 @@ class GameDraw:
         self.clock = clock
         self.gameMessages = messages
         self.drawTextObject = drawText(self.surface,"default", constants.colorWhite,(0,0))
+        self.surfaceMap = surfaceMap
+        self.camera = camera
+
     def drawGame(self):
 
         self.surface.fill(constants.colorDefaultBG)
+        
+        #self.surfaceMap.fill(constants.colorBlack)
+        displayRect = pygame.Rect((50,50),(constants.cameraWidth, constants.cameraHeight) )
+        
+        self.camera.update()
 
         self.map.drawToMap(self.surface)
 
@@ -848,8 +876,11 @@ class GameDraw:
             isVisble = tcod.map_is_in_fov(self.map.FOVMAP,obj.x, obj.y)
             if isVisble:
                 obj.draw()
-                       
+
+        
         self.player.draw()
+        self.surface.blit(self.surfaceMap, (0,0), self.camera.rectangle)
+
         self.drawMessages()
 
         
@@ -860,7 +891,7 @@ class GameDraw:
         else:
             toDraw = self.gameMessages[-constants.numMessages:]
 
-        startY = constants.cameraHeight*constants.cellHeight - (constants.numMessages * self.drawTextObject.textHeight()) -10
+        startY = constants.cameraHeight - (constants.numMessages * self.drawTextObject.textHeight()) -10
 
         i = 0
         for message, color in toDraw:
@@ -1083,7 +1114,8 @@ class GameRunner:
         self.playerGen = genPlayer(self.surfaceMain, self.map, self.nonPlayerList, self.surfaceMap)
         self.player = self.playerGen.generate(self.map.listOfRooms[0].center())
 
-        self.GameDrawer = GameDraw(self.surfaceMain,self.player, self.map, self.nonPlayerList, self.clock, self.gameMessages)
+        self.camera = Camera(self.player)
+        self.GameDrawer = GameDraw(self.surfaceMain,self.player, self.map, self.nonPlayerList, self.clock, self.gameMessages, self.surfaceMap, self.camera)
         
         self.menu = menu(self.surfaceMain, self.player, self.nonPlayerList, self.GameDrawer)
 
@@ -1096,12 +1128,12 @@ class GameRunner:
 
         for i, room in enumerate(self.currentRooms):
 
-           # if i !=0:
-            x = tcod.random_get_int(0, room.x+1, room.x2 - 1)
-            y = tcod.random_get_int(0, room.y+1, room.y2 - 1)
+            if i !=0:
+                x = tcod.random_get_int(0, room.x+1, room.x2 - 1)
+                y = tcod.random_get_int(0, room.y+1, room.y2 - 1)
 
-            newEnemy = genEnemies(self.surfaceMain, self.player, self.map, self.nonPlayerList, self.surfaceMap)
-            newEnemy.genEnemy((x,y))
+                newEnemy = genEnemies(self.surfaceMain, self.player, self.map, self.nonPlayerList, self.surfaceMap)
+                newEnemy.genEnemy((x,y))
  
             x = tcod.random_get_int(0, room.x+1, room.x2 - 1)
             y = tcod.random_get_int(0, room.y+1, room.y2 - 1)
