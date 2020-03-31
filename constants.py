@@ -59,3 +59,4 @@ swordSprite = pygame.transform.scale(pygame.image.load('C:/ENGI5895SoftwareDesig
 shieldSprite = pygame.transform.scale(pygame.image.load('C:/ENGI5895SoftwareDesign/Project/Sprites/Characters/shield.png'), (cellWidth, cellHeight))
 lightningScrollSprite = pygame.transform.scale(pygame.image.load('C:/ENGI5895SoftwareDesign/Project/Sprites/Characters/lightningScroll.png'), (cellWidth, cellHeight))
 confusionScrollSprite = pygame.transform.scale(pygame.image.load('C:/ENGI5895SoftwareDesign/Project/Sprites/Characters/confusionScroll.png'), (cellWidth, cellHeight))
+fireballSprite = pygame.transform.scale(pygame.image.load('C:/ENGI5895SoftwareDesign/Project/Sprites/Characters/fireball.png'), (cellWidth, cellHeight))
