@@ -2,15 +2,23 @@ import pygame
 import tcod
 pygame.init()
 
-# #Game Sizes
+#Game Sizes
 gameWidth = 800
 gameHeight = 600
 cellWidth = 32
 cellHeight = 32
 
-# #MapTileSizes
-mapWidth = 20
+#MapTileSizes
+mapWidth = 40
 mapHeight = 20
+mapMaxNumRooms = 10
+
+#Room Limiations
+roomMaxHeight = 7
+roomMinHeight = 3
+
+roomMaxWidth = 5
+roomMinWidth = 3
 
 # #Colour Definitions
 colorBlack = (0,0,0)
