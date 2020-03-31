@@ -3,14 +3,14 @@ import tcod
 pygame.init()
 
 #Game Sizes
-gameWidth = 800
-gameHeight = 600
+cameraWidth = 800
+cameraHeight = 600
 cellWidth = 32
 cellHeight = 32
 
 #MapTileSizes
-mapWidth = 40
-mapHeight = 20
+mapWidth = 50
+mapHeight = 50
 mapMaxNumRooms = 10
 
 #Room Limiations

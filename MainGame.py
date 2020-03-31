@@ -9,49 +9,52 @@ import constants
 
 class genPlayer:
 
-    def __init__(self, surface, map, nonPlayerList):
+    def __init__(self, surface, map, nonPlayerList, surfaceMap):
         self.surface  = surface
         self.map = map
         self.nonPlayerList = nonPlayerList
+        self.surfaceMap = surfaceMap
 
     def generate(self, coords):
         x,y = coords
         playerCreature = Creature("Python", 15, baseAtck=3)
         playerInv = Container()
-        player = Actor(x,y,constants.playerSprite, self.surface, self.map, self.nonPlayerList, "Player", playerCreature, None, playerInv)
+        player = Actor(x,y,constants.playerSprite, self.surface, self.map, self.nonPlayerList, "Player", playerCreature, None, playerInv, surfaceMap= self.surfaceMap)
         self.nonPlayerList.append(player)
         return player
 
 class genEnemies:
     
-    def __init__(self,surface, player, map, nonPlayerList):
+    def __init__(self,surface, player, map, nonPlayerList, surfaceMap):
         self.surface = surface
         self.player = player
         self.map = map
         self.nonPlayerList = nonPlayerList
+        self.surfaceMap = surfaceMap
     
     def genEnemy(self, coords):
         randomNum = tcod.random_get_int(0,1,100)
 
         if randomNum > 15: 
-            crabEnemy = genCrab(coords, self.surface, self.player, self.map, self.nonPlayerList)
+            crabEnemy = genCrab(coords, self.surface, self.player, self.map, self.nonPlayerList, self.surfaceMap)
             crabEnemyActor = crabEnemy.generate()
             self.nonPlayerList.append(crabEnemyActor)
             return crabEnemyActor
         else: 
-            cobraEnemy = genCobra(coords, self.surface, self.player, self.map, self.nonPlayerList)
+            cobraEnemy = genCobra(coords, self.surface, self.player, self.map, self.nonPlayerList, self.surfaceMap)
             cobraEnemyActor = cobraEnemy.generate()
             self.nonPlayerList.append(cobraEnemyActor)
             return cobraEnemyActor
 
 class genCrab:
-    def __init__(self,coords, surface, player, map, nonPlayerList):
+    def __init__(self,coords, surface, player, map, nonPlayerList, surfaceMap):
         self.coords = coords
         self.player = player
         self.map = map
         self.surface = surface
         self.itemActor = None
         self.nonPlayerList = nonPlayerList
+        self.surfaceMap = surfaceMap
     
     def generate(self):
         x,y = self.coords
@@ -62,18 +65,19 @@ class genCrab:
 
         enemyCreature = Creature("Mr. Crabs", maxHealth, baseAttck)
         aiCom = AIChase()
-        self.itemActor = Actor(x,y, constants.mainEnemySprite, self.surface, self.map, self.nonPlayerList, "Crab", enemyCreature ,item = CorpseItem, ai = aiCom)
+        self.itemActor = Actor(x,y, constants.mainEnemySprite, self.surface, self.map, self.nonPlayerList, "Crab", enemyCreature ,item = CorpseItem, ai = aiCom, surfaceMap=self.surfaceMap)
         return self.itemActor
 
 class genCobra:
-    def __init__(self,coords, surface, player, map, nonPlayerList):
+    def __init__(self,coords, surface, player, map, nonPlayerList, surfaceMap):
         self.coords = coords
         self.player = player
         self.map = map
         self.surface = surface
         self.itemActor = None
         self.nonPlayerList = nonPlayerList
-    
+        self.surfaceMap = surfaceMap
+
     def generate(self):
         x,y = self.coords
         CorpseItem = Item(None, self.player, healOrDamageVal = 8)
@@ -83,127 +87,132 @@ class genCobra:
 
         enemyCreature = Creature("Buns", hp = maxHealth, baseAtck = baseAttck)
         aiCom = AIChase()
-        self.itemActor = Actor(x,y, constants.rareCobraSprite, self.surface, self.map, self.nonPlayerList, "Cobra", enemyCreature, item = CorpseItem, ai = aiCom)
+        self.itemActor = Actor(x,y, constants.rareCobraSprite, self.surface, self.map, self.nonPlayerList, "Cobra", enemyCreature, item = CorpseItem, ai = aiCom, surfaceMap = self.surfaceMap)
         return self.itemActor
 
 class randomItemGeneration:
-    def __init__(self,surface, player, map, nonPlayerList):
+    def __init__(self,surface, player, map, nonPlayerList, surfaceMap):
         self.surface = surface
         self.player = player
         self.map = map
         self.nonPlayerList = nonPlayerList
+        self.surfaceMap = surfaceMap
     
     def genItem(self, coords):
         randomNum = tcod.random_get_int(0,1,5)
 
         if randomNum == 1: 
-            lightningSpell = genLighting(coords, self.surface, self.player, self.map)
+            lightningSpell = genLighting(coords, self.surface, self.player, self.map, self.surfaceMap)
             lightningSpellActor = lightningSpell.generate()
             self.nonPlayerList.append(lightningSpellActor)
             return lightningSpellActor
         if randomNum == 2: 
-            confusionSpell = genConfusionSpell(coords, self.surface, self.player, self.map)
+            confusionSpell = genConfusionSpell(coords, self.surface, self.player, self.map, self.surfaceMap)
             confusionSpellActor = confusionSpell.generate()
             self.nonPlayerList.append(confusionSpellActor)
             return confusionSpellActor
         if randomNum == 3: 
-            sword = genSword(coords, self.surface, self.player, self.map)
+            sword = genSword(coords, self.surface, self.player, self.map,self.surfaceMap)
             swordActor = sword.generate()
             self.nonPlayerList.append(swordActor)
             return swordActor
         if randomNum == 4: 
-            shield = genShield(coords, self.surface, self.player, self.map)
+            shield = genShield(coords, self.surface, self.player, self.map, self.surfaceMap)
             shieldActor = shield.generate()
             self.nonPlayerList.append(shieldActor)
             return shieldActor
         if randomNum == 5: 
-            FireSpell = genFireballSpell(coords, self.surface, self.player, self.map)
+            FireSpell = genFireballSpell(coords, self.surface, self.player, self.map, self.surfaceMap)
             FireballSpellActor = FireSpell.generate()
             self.nonPlayerList.append(FireballSpellActor)
             return FireballSpellActor
 
 class genSword():
     
-    def __init__(self,coords, surface, player, map):
+    def __init__(self,coords, surface, player, map, surfaceMap):
         self.coords = coords
         self.player = player
         self.map = map
         self.surface = surface
         self.itemActor = None
+        self.surfaceMap = surfaceMap
     
     def generate(self):
         x,y = self.coords
         bonus = tcod.random_get_int(0, 1, 2)
         Sword = Equipment(self.player, bonus, 0, "rightHand")
 
-        self.itemActor = Actor(x,y, constants.swordSprite, self.surface, self.map, [], "Sword",equipment= Sword)
+        self.itemActor = Actor(x,y, constants.swordSprite, self.surface, self.map, [], "Sword",equipment= Sword, surfaceMap= self.surfaceMap)
         return self.itemActor
 class genShield():
     
-    def __init__(self,coords, surface, player, map):
+    def __init__(self,coords, surface, player, map, surfaceMap):
         self.coords = coords
         self.player = player
         self.map = map
         self.surface = surface
         self.itemActor = None
-    
+        self.surfaceMap = surfaceMap
     def generate(self):
         x,y = self.coords
         bonus = tcod.random_get_int(0, 1, 2)
         Sword = Equipment(self.player, 0, bonus, "leftHand")
 
-        self.itemActor = Actor(x,y, constants.shieldSprite, self.surface, self.map, [], "Shield",equipment= Sword)
+        self.itemActor = Actor(x,y, constants.shieldSprite, self.surface, self.map, [], "Shield",equipment= Sword, surfaceMap = self.surfaceMap)
         return self.itemActor
 #class for generating lightning spell w/ random damage
 class genLighting():
     
-    def __init__(self,coords, surface, player, map):
+    def __init__(self,coords, surface, player, map, surfaceMap):
         self.coords = coords
         self.player = player
         self.map = map
         self.surface = surface
         self.itemActor = None
+        self.surfaceMap = surfaceMap
     
     def generate(self):
         x,y = self.coords
         damage = tcod.random_get_int(0, 5, 7)
         LightningItem = Item(owner=None, player=self.player, healOrDamageVal= damage)
 
-        self.itemActor = Actor(x,y, constants.lightningScrollSprite, self.surface, self.map, [], "Lighting Scroll", item = LightningItem)
+        self.itemActor = Actor(x,y, constants.lightningScrollSprite, self.surface, self.map, [], "Lighting Scroll", item = LightningItem, surfaceMap = self.surfaceMap)
         return self.itemActor
 #class for confusion spell with random time and place
 class genConfusionSpell():
     
-    def __init__(self,coords, surface, player, map):
+    def __init__(self,coords, surface, player, map, surfaceMap):
         self.coords = coords
         self.player = player
         self.map = map
         self.surface = surface
         self.itemActor = None
+        self.surfaceMap = surfaceMap
     def generate(self):
         x,y = self.coords
         numTurns = tcod.random_get_int(0, 2, 4)
         ConfusionItem = Item(owner=None, player=self.player, healOrDamageVal= numTurns)
 
-        self.itemActor = Actor(x,y, constants.confusionScrollSprite, self.surface, self.map, [], "Confusion Scroll", item = ConfusionItem)
+        self.itemActor = Actor(x,y, constants.confusionScrollSprite, self.surface, self.map, [], "Confusion Scroll", item = ConfusionItem, surfaceMap = self.surfaceMap)
 
         return self.itemActor
 
 #CLASS FOR FIREBALL GENERATION FOR STEFAN TO DO
 class genFireballSpell():
 
-    def __init__(self,coords, surface, player, map):
+    def __init__(self,coords, surface, player, map, surfaceMap):
         self.coords = coords
         self.player = player
         self.map = map
         self.surface = surface
         self.itemActor = None
+        self.surfaceMap = surfaceMap
     def generate(self):
         x,y = self.coords
         damage = 5
         FireballItem = Item(owner=None, player=self.player, healOrDamageVal= damage)
 
-        self.itemActor = Actor(x,y, constants.fireballSprite, self.surface, self.map, [], "Fireball Scroll", item = FireballItem)
+        self.itemActor = Actor(x,y, constants.fireballSprite, self.surface, self.map, [], "Fireball Scroll", item = FireballItem, surfaceMap = self.surfaceMap)
 
         return self.itemActor
 
@@ -331,11 +340,12 @@ class menu():
 
 #class for selecting a target on the screen       
 class targetselect:
-    def __init__(self,surface, actor, map, nonPlayerList):
+    def __init__(self,surface, actor, map, nonPlayerList, surfaceMap):
         self.surface = surface
         self.player = actor
         self.map = map
         self.nonPlayerList = nonPlayerList
+        self.surfaceMap = surfaceMap
 
     def menu_target_select(self, coordsOrigin = None, maxRange = None, penetrateWalls = True, mark = None, pierce_creature = True, radius = None):
         menuClose = False
@@ -415,11 +425,11 @@ class targetselect:
             drawX = drawText(new_surface, mark, constants.colorRed, (constants.cellWidth/2,constants.cellHeight/2))
             drawX.drawOnSurface(incomingFont=constants.fontCursorText, center=center)
             
-        self.surface.blit(new_surface,(new_x,new_y))
+        self.surfaceMap .blit(new_surface,(new_x,new_y))
               
 #baseclass for an actor. Actor being any object that can interact with a surface
 class Actor:
-    def __init__(self, x, y, sprite, surface, map, enemyList, objName,creature = None, ai = None, container = None, item = None, equipment = None):
+    def __init__(self, x, y, sprite, surface, map, enemyList, objName,creature = None, ai = None, container = None, item = None, equipment = None, surfaceMap = None):
         self.x = x #map address
         self.y = y # map address
         self.objName = objName
@@ -429,6 +439,7 @@ class Actor:
         self.ai = AI()
         self.enemyList = enemyList
         self.objName = objName
+        self.surfaceMap = surfaceMap
        
         self.creature = creature
         if creature:
@@ -452,7 +463,7 @@ class Actor:
 
 
     def draw(self):
-        self.surface.blit(self.sprite, ( self.x*constants.cellWidth, self.y*constants.cellHeight ))
+        self.surfaceMap.blit(self.sprite, ( self.x*constants.cellWidth, self.y*constants.cellHeight ))
     def move(self,dx,dy):
         tileIsWall = ((self.map.getCurrentMap())[self.x + dx][self.y + dy].blockPath == True)
 
@@ -849,7 +860,7 @@ class GameDraw:
         else:
             toDraw = self.gameMessages[-constants.numMessages:]
 
-        startY = constants.mapHeight*constants.cellHeight - (constants.numMessages * self.drawTextObject.textHeight()) -10
+        startY = constants.cameraHeight*constants.cellHeight - (constants.numMessages * self.drawTextObject.textHeight()) -10
 
         i = 0
         for message, color in toDraw:
@@ -917,12 +928,12 @@ class RectRoom:
 
 #class to handle the game's map
 class Map:
-    def __init__(self, fovCalculate, nonPlayerList, surface, player= None):
+    def __init__(self, fovCalculate, nonPlayerList, surface, player= None, surfaceMap = None):
         # constructor uses tunnelling algorithm to create rooms
         self.fovCalculate = fovCalculate
         self.player = player
         self.map = [[ tileStrucutre(True) for y in range(0,constants.mapHeight)] for x in range(0,constants.mapWidth)]
-
+        self.surfaceMap = surfaceMap
         self.listOfRooms = []
 
         for i in range(0, constants.mapMaxNumRooms):
@@ -989,14 +1000,14 @@ class Map:
                 if isVisible:
                     self.map[x][y].explored = True
                     if self.map[x][y].blockPath == True:
-                        surface.blit(constants.wallSprite, ( x*constants.cellWidth, y*constants.cellHeight))
+                        self.surfaceMap.blit(constants.wallSprite, ( x*constants.cellWidth, y*constants.cellHeight))
                     else: 
-                        surface.blit(constants.floorSprite, ( x*constants.cellWidth, y*constants.cellHeight))
+                        self.surfaceMap.blit(constants.floorSprite, ( x*constants.cellWidth, y*constants.cellHeight))
                 elif(self.map[x][y].explored):
                     if self.map[x][y].blockPath == True:
-                        surface.blit(constants.wallExploredSprite, ( x*constants.cellWidth, y*constants.cellHeight))
+                        self.surfaceMap.blit(constants.wallExploredSprite, ( x*constants.cellWidth, y*constants.cellHeight))
                     else: 
-                        surface.blit(constants.floorExploredSprite, ( x*constants.cellWidth, y*constants.cellHeight))
+                        self.surfaceMap.blit(constants.floorExploredSprite, ( x*constants.cellWidth, y*constants.cellHeight))
     def makeFOV(self):
             self.FOVMAP = tcod.map_new(constants.mapWidth, constants.mapHeight)
             for y in range(constants.mapHeight):
@@ -1058,15 +1069,18 @@ class GameRunner:
         pygame.init()
         pygame.key.set_repeat(200, 70)
         self.clock = pygame.time.Clock()
-        self.surfaceMain = pygame.display.set_mode( (constants.mapWidth*constants.cellWidth,constants.mapHeight*constants.cellHeight) )
+        self.surfaceMain = pygame.display.set_mode( (constants.cameraWidth, constants.cameraHeight) )
+        
+        self.surfaceMap = pygame.Surface((constants.mapWidth * constants.cellWidth, constants.mapHeight * constants.cellHeight))
+
         self.fovCalculate = True
         self.gameMessages = []
         self.nonPlayerList = []
 
-        self.map = Map(self.fovCalculate, self.nonPlayerList, self.surfaceMain)
+        self.map = Map(self.fovCalculate, self.nonPlayerList, self.surfaceMain, surfaceMap=self.surfaceMap)
         self.currentRooms = self.map.listOfRooms
 
-        self.playerGen = genPlayer(self.surfaceMain, self.map, self.nonPlayerList)
+        self.playerGen = genPlayer(self.surfaceMain, self.map, self.nonPlayerList, self.surfaceMap)
         self.player = self.playerGen.generate(self.map.listOfRooms[0].center())
 
         self.GameDrawer = GameDraw(self.surfaceMain,self.player, self.map, self.nonPlayerList, self.clock, self.gameMessages)
@@ -1082,19 +1096,19 @@ class GameRunner:
 
         for i, room in enumerate(self.currentRooms):
 
-            if i !=0:
-                x = tcod.random_get_int(0, room.x+1, room.x2 - 1)
-                y = tcod.random_get_int(0, room.y+1, room.y2 - 1)
+           # if i !=0:
+            x = tcod.random_get_int(0, room.x+1, room.x2 - 1)
+            y = tcod.random_get_int(0, room.y+1, room.y2 - 1)
 
-                newEnemy = genEnemies(self.surfaceMain, self.player, self.map, self.nonPlayerList)
-                newEnemy.genEnemy((x,y))
+            newEnemy = genEnemies(self.surfaceMain, self.player, self.map, self.nonPlayerList, self.surfaceMap)
+            newEnemy.genEnemy((x,y))
  
             x = tcod.random_get_int(0, room.x+1, room.x2 - 1)
             y = tcod.random_get_int(0, room.y+1, room.y2 - 1)
 
             if (x,y) is not (self.player.x , self.player.y): 
 
-                newItem = randomItemGeneration(self.surfaceMain, self.player, self.map, self.nonPlayerList)
+                newItem = randomItemGeneration(self.surfaceMain, self.player, self.map, self.nonPlayerList, self.surfaceMap)
                 newItem.genItem((x,y))
 
     def game_main_loop(self):
