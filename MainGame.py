@@ -9,214 +9,224 @@ import constants
 
 class genPlayer:
 
-    def __init__(self, surface, map, nonPlayerList):
+    def __init__(self, surface, map, nonPlayerList, surfaceMap):
         self.surface  = surface
         self.map = map
         self.nonPlayerList = nonPlayerList
+        self.surfaceMap = surfaceMap
 
     def generate(self, coords):
         x,y = coords
         playerCreature = Creature("Python", 15, baseAtck=3)
         playerInv = Container()
-        player = Actor(x,y,constants.playerSprite, self.surface, self.map, self.nonPlayerList, "Player", playerCreature, None, playerInv)
+        player = Actor(x,y,constants.playerSprite, self.surface, self.map, self.nonPlayerList, "Player", playerCreature, None, playerInv, surfaceMap= self.surfaceMap)
         self.nonPlayerList.append(player)
         return player
 
 class genEnemies:
     
-    def __init__(self,surface, player, map, nonPlayerList):
+    def __init__(self,surface, player, map, nonPlayerList, surfaceMap):
         self.surface = surface
         self.player = player
         self.map = map
         self.nonPlayerList = nonPlayerList
+        self.surfaceMap = surfaceMap
     
     def genEnemy(self, coords):
         randomNum = tcod.random_get_int(0,1,100)
 
         if randomNum > 15: 
-            crabEnemy = genCrab(coords, self.surface, self.player, self.map, self.nonPlayerList)
+            crabEnemy = genCrab(coords, self.surface, self.player, self.map, self.nonPlayerList, self.surfaceMap)
             crabEnemyActor = crabEnemy.generate()
             self.nonPlayerList.append(crabEnemyActor)
             return crabEnemyActor
         else: 
-            cobraEnemy = genCobra(coords, self.surface, self.player, self.map, self.nonPlayerList)
+            cobraEnemy = genCobra(coords, self.surface, self.player, self.map, self.nonPlayerList, self.surfaceMap)
             cobraEnemyActor = cobraEnemy.generate()
             self.nonPlayerList.append(cobraEnemyActor)
             return cobraEnemyActor
 
 class genCrab:
-    def __init__(self,coords, surface, player, map, nonPlayerList):
+    def __init__(self,coords, surface, player, map, nonPlayerList, surfaceMap):
         self.coords = coords
         self.player = player
         self.map = map
         self.surface = surface
         self.itemActor = None
         self.nonPlayerList = nonPlayerList
+        self.surfaceMap = surfaceMap
     
     def generate(self):
         x,y = self.coords
-        CorpseItem = Item(None, self.player, healOrDamageVal = 5)
+        CorpseItem = Item(None, self.player, healOrDamageVal = 5, camera = None)
 
         maxHealth = tcod.random_get_int(0,7,10)
         baseAttck = tcod.random_get_int(0,2,3)
 
         enemyCreature = Creature("Mr. Crabs", maxHealth, baseAttck)
         aiCom = AIChase()
-        self.itemActor = Actor(x,y, constants.mainEnemySprite, self.surface, self.map, self.nonPlayerList, "Crab", enemyCreature ,item = CorpseItem, ai = aiCom)
+        self.itemActor = Actor(x,y, constants.mainEnemySprite, self.surface, self.map, self.nonPlayerList, "Crab", enemyCreature ,item = CorpseItem, ai = aiCom, surfaceMap=self.surfaceMap)
         return self.itemActor
 
 class genCobra:
-    def __init__(self,coords, surface, player, map, nonPlayerList):
+    def __init__(self,coords, surface, player, map, nonPlayerList, surfaceMap):
         self.coords = coords
         self.player = player
         self.map = map
         self.surface = surface
         self.itemActor = None
         self.nonPlayerList = nonPlayerList
-    
+        self.surfaceMap = surfaceMap
+
     def generate(self):
         x,y = self.coords
-        CorpseItem = Item(None, self.player, healOrDamageVal = 8)
+        CorpseItem = Item(None, self.player, healOrDamageVal = 8, camera=None)
         
         maxHealth = tcod.random_get_int(0,12,14)
-        baseAttck = tcod.random_get_int(0,2,4)
+        baseAttck = tcod.random_get_int(0,2,3)
 
         enemyCreature = Creature("Buns", hp = maxHealth, baseAtck = baseAttck)
         aiCom = AIChase()
-        self.itemActor = Actor(x,y, constants.rareCobraSprite, self.surface, self.map, self.nonPlayerList, "Cobra", enemyCreature, item = CorpseItem, ai = aiCom)
+        self.itemActor = Actor(x,y, constants.rareCobraSprite, self.surface, self.map, self.nonPlayerList, "Cobra", enemyCreature, item = CorpseItem, ai = aiCom, surfaceMap = self.surfaceMap)
         return self.itemActor
 
 class randomItemGeneration:
-    def __init__(self,surface, player, map, nonPlayerList):
+    def __init__(self,surface, player, map, nonPlayerList, surfaceMap):
         self.surface = surface
         self.player = player
         self.map = map
         self.nonPlayerList = nonPlayerList
+        self.surfaceMap = surfaceMap
     
-    def genItem(self, coords):
+    def genItem(self, coords, camera):
         randomNum = tcod.random_get_int(0,1,5)
 
         if randomNum == 1: 
-            lightningSpell = genLighting(coords, self.surface, self.player, self.map)
-            lightningSpellActor = lightningSpell.generate()
+            lightningSpell = genLighting(coords, self.surface, self.player, self.map, self.surfaceMap)
+            lightningSpellActor = lightningSpell.generate(camera)
             self.nonPlayerList.append(lightningSpellActor)
             return lightningSpellActor
         if randomNum == 2: 
-            confusionSpell = genConfusionSpell(coords, self.surface, self.player, self.map)
-            confusionSpellActor = confusionSpell.generate()
+            confusionSpell = genConfusionSpell(coords, self.surface, self.player, self.map, self.surfaceMap)
+            confusionSpellActor = confusionSpell.generate(camera)
             self.nonPlayerList.append(confusionSpellActor)
             return confusionSpellActor
         if randomNum == 3: 
-            sword = genSword(coords, self.surface, self.player, self.map)
+            sword = genSword(coords, self.surface, self.player, self.map,self.surfaceMap)
             swordActor = sword.generate()
             self.nonPlayerList.append(swordActor)
             return swordActor
         if randomNum == 4: 
-            shield = genShield(coords, self.surface, self.player, self.map)
+            shield = genShield(coords, self.surface, self.player, self.map, self.surfaceMap)
             shieldActor = shield.generate()
             self.nonPlayerList.append(shieldActor)
             return shieldActor
         if randomNum == 5: 
-            FireSpell = genFireballSpell(coords, self.surface, self.player, self.map)
-            FireballSpellActor = FireSpell.generate()
+            FireSpell = genFireballSpell(coords, self.surface, self.player, self.map, self.surfaceMap)
+            FireballSpellActor = FireSpell.generate(camera=camera)
             self.nonPlayerList.append(FireballSpellActor)
             return FireballSpellActor
 
 class genSword():
     
-    def __init__(self,coords, surface, player, map):
+    def __init__(self,coords, surface, player, map, surfaceMap):
         self.coords = coords
         self.player = player
         self.map = map
         self.surface = surface
         self.itemActor = None
+        self.surfaceMap = surfaceMap
     
     def generate(self):
         x,y = self.coords
         bonus = tcod.random_get_int(0, 1, 2)
         Sword = Equipment(self.player, bonus, 0, "rightHand")
 
-        self.itemActor = Actor(x,y, constants.swordSprite, self.surface, self.map, [], "Sword",equipment= Sword)
+        self.itemActor = Actor(x,y, constants.swordSprite, self.surface, self.map, [], "Sword",equipment= Sword, surfaceMap= self.surfaceMap)
         return self.itemActor
 class genShield():
     
-    def __init__(self,coords, surface, player, map):
+    def __init__(self,coords, surface, player, map, surfaceMap):
         self.coords = coords
         self.player = player
         self.map = map
         self.surface = surface
         self.itemActor = None
-    
+        self.surfaceMap = surfaceMap
     def generate(self):
         x,y = self.coords
         bonus = tcod.random_get_int(0, 1, 2)
         Sword = Equipment(self.player, 0, bonus, "leftHand")
 
-        self.itemActor = Actor(x,y, constants.shieldSprite, self.surface, self.map, [], "Shield",equipment= Sword)
+        self.itemActor = Actor(x,y, constants.shieldSprite, self.surface, self.map, [], "Shield",equipment= Sword, surfaceMap = self.surfaceMap)
         return self.itemActor
 #class for generating lightning spell w/ random damage
 class genLighting():
     
-    def __init__(self,coords, surface, player, map):
+    def __init__(self,coords, surface, player, map, surfaceMap):
         self.coords = coords
         self.player = player
         self.map = map
         self.surface = surface
         self.itemActor = None
+        self.surfaceMap = surfaceMap
     
-    def generate(self):
+    def generate(self, camera):
         x,y = self.coords
         damage = tcod.random_get_int(0, 5, 7)
-        LightningItem = Item(owner=None, player=self.player, healOrDamageVal= damage)
+        LightningItem = Item(owner=None, player=self.player, healOrDamageVal= damage, camera=camera)
 
-        self.itemActor = Actor(x,y, constants.lightningScrollSprite, self.surface, self.map, [], "Lighting Scroll", item = LightningItem)
+        self.itemActor = Actor(x,y, constants.lightningScrollSprite, self.surface, self.map, [], "Lighting Scroll", item = LightningItem, surfaceMap = self.surfaceMap)
         return self.itemActor
 #class for confusion spell with random time and place
 class genConfusionSpell():
     
-    def __init__(self,coords, surface, player, map):
+    def __init__(self,coords, surface, player, map, surfaceMap):
         self.coords = coords
         self.player = player
         self.map = map
         self.surface = surface
         self.itemActor = None
-    def generate(self):
+        self.surfaceMap = surfaceMap
+    def generate(self, camera):
         x,y = self.coords
         numTurns = tcod.random_get_int(0, 2, 4)
-        ConfusionItem = Item(owner=None, player=self.player, healOrDamageVal= numTurns)
+        ConfusionItem = Item(owner=None, player=self.player, healOrDamageVal= numTurns, camera= camera)
 
-        self.itemActor = Actor(x,y, constants.confusionScrollSprite, self.surface, self.map, [], "Confusion Scroll", item = ConfusionItem)
+        self.itemActor = Actor(x,y, constants.confusionScrollSprite, self.surface, self.map, [], "Confusion Scroll", item = ConfusionItem, surfaceMap = self.surfaceMap)
 
         return self.itemActor
 
-#CLASS FOR FIREBALL GENERATION FOR STEFAN TO DO
+#CLASS FOR FIREBALL GENERATION
 class genFireballSpell():
 
-    def __init__(self,coords, surface, player, map):
+    def __init__(self,coords, surface, player, map, surfaceMap):
         self.coords = coords
         self.player = player
         self.map = map
         self.surface = surface
         self.itemActor = None
-    def generate(self):
+        self.surfaceMap = surfaceMap
+    def generate(self, camera):
         x,y = self.coords
         damage = 5
-        FireballItem = Item(owner=None, player=self.player, healOrDamageVal= damage)
+        FireballItem = Item(owner=None, player=self.player, healOrDamageVal= damage, camera= camera)
 
-        self.itemActor = Actor(x,y, constants.fireballSprite, self.surface, self.map, [], "Fireball Scroll", item = FireballItem)
+        self.itemActor = Actor(x,y, constants.fireballSprite, self.surface, self.map, [], "Fireball Scroll", item = FireballItem, surfaceMap = self.surfaceMap)
 
         return self.itemActor
 
 #class for a menu such as an inventory menu and a menu that pauses the game
 class menu():
-    def __init__(self,surface, player, nonPlayerList, GameDrawer = None):
+    def __init__(self,surface, player, nonPlayerList, surfaceMap, GameDrawer = None):
         self.surface = surface
         self.player = player
         self.nonPlayerList = nonPlayerList
+        self.surfaceMap = surfaceMap
     def menuPause(self):
 
-        windowsWidth = constants.mapWidth* constants.cellWidth
-        windowsHeight = constants.mapHeight * constants.cellHeight
+        windowsWidth = constants.cameraWidth
+        windowsHeight = constants.cameraHeight
         menuText = "PAUSED PRESS P TO UNPAUSE"
         menuClose = False
         while not menuClose:
@@ -241,8 +251,8 @@ class menu():
         gameMessages = []
         menuWidth = 250
         menuHeight = 200
-        windowsWidth = constants.mapWidth* constants.cellWidth
-        windowsHeight = constants.mapHeight * constants.cellHeight
+        windowsWidth = constants.cameraWidth
+        windowsHeight = constants.cameraHeight
         inventorySurface = pygame.Surface((menuWidth,menuHeight))
 
         menuX = windowsWidth/2 - menuWidth/2
@@ -278,13 +288,14 @@ class menu():
                             mouseLineSelection <= len(printList)-1):
                               if(len(gameMessages) > 0):
                                   if self.player.container.inventory[mouseLineSelection].item != None:
+                                    menuClose = True
                                     useMessages = self.player.container.inventory[mouseLineSelection].item.use(self.nonPlayerList)
                                     if (isinstance(useMessages, list)):
                                         gameMessages = gameMessages + useMessages
                                     else:
                                         gameMessages.append(useMessages)
-                                    menuClose = True
                                   else:
+                                    menuClose = True
                                     useMessages = self.player.container.inventory[mouseLineSelection].equipment.use(self.nonPlayerList)
                                     if (isinstance(useMessages, list)):
                                         gameMessages = gameMessages + useMessages
@@ -293,6 +304,7 @@ class menu():
                               else:
                                   if self.player.container.inventory[mouseLineSelection].item != None:
                                      
+                                    menuClose = True
                                     useMessages = self.player.container.inventory[mouseLineSelection].item.use(self.nonPlayerList)
                                     if (isinstance(useMessages, list)):
                                       
@@ -300,9 +312,9 @@ class menu():
                                     else:
                                        
                                         gameMessages.append(useMessages)
-                                    menuClose = True
                                   else:
                                       
+                                    menuClose = True
                                     useMessages = self.player.container.inventory[mouseLineSelection].equipment.use(self.nonPlayerList)
                                     if (isinstance(useMessages, list)):
                                        
@@ -331,11 +343,13 @@ class menu():
 
 #class for selecting a target on the screen       
 class targetselect:
-    def __init__(self,surface, actor, map, nonPlayerList):
+    def __init__(self,surface, actor, map, nonPlayerList, surfaceMap, camera):
         self.surface = surface
         self.player = actor
         self.map = map
         self.nonPlayerList = nonPlayerList
+        self.surfaceMap = surfaceMap
+        self.camera = camera
 
     def menu_target_select(self, coordsOrigin = None, maxRange = None, penetrateWalls = True, mark = None, pierce_creature = True, radius = None):
         menuClose = False
@@ -345,8 +359,13 @@ class targetselect:
             #get button clicks
             events_list = pygame.event.get()
             
-            mouse_x_rel = mouse_x//constants.cellWidth
-            mouse_y_rel = mouse_y//constants.cellHeight
+            mapPixelX, mapPixelY = self.camera.winToMap((mouse_x, mouse_y))
+
+            mapPixelX = mapPixelX
+            mapPixelY = mapPixelY
+
+            mouse_x_rel = mapPixelX//constants.cellWidth
+            mouse_y_rel = mapPixelY//constants.cellHeight
 
             fullListTiles = []
             validListTiles = []
@@ -374,23 +393,27 @@ class targetselect:
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if event.button ==1:
                         return validListTiles[-1]
-            
+            center = False
+            if mark:
+                center = True
+
+            self.surface.fill(constants.colorBlack)
+        
+            self.surfaceMap.fill(constants.colorBlack)
                 
-            self.surface.fill(constants.colorDefaultBG)
+            self.camera.update()
 
             self.map.drawToMap(self.surface)
 
             for obj in self.nonPlayerList:
                 isVisble = tcod.map_is_in_fov(self.map.FOVMAP,obj.x, obj.y)
                 if isVisble:
-                 obj.draw()
+                    obj.draw()
 
-            center = False
-            if mark:
-                center = True
+        
+            self.player.draw()
 
             #may need to change later for firespell and lighting spell
-            self.player.draw()
             for coords in validListTiles:
                 x,y = coords
                 if coords == validListTiles[-1]:
@@ -401,6 +424,7 @@ class targetselect:
                         self.draw_tile_rect((x, y))
                 else:
                      self.draw_tile_rect((x,y))
+            self.surface.blit(self.surfaceMap, (0,0), self.camera.rectangle)
             pygame.display.flip()
            # self.clock.tick(constants.gameFPS)
 
@@ -415,11 +439,74 @@ class targetselect:
             drawX = drawText(new_surface, mark, constants.colorRed, (constants.cellWidth/2,constants.cellHeight/2))
             drawX.drawOnSurface(incomingFont=constants.fontCursorText, center=center)
             
-        self.surface.blit(new_surface,(new_x,new_y))
-              
+        self.surfaceMap.blit(new_surface,(new_x,new_y))
+
+class Camera:
+
+    def __init__(self, player):
+        self.width = constants.cameraWidth
+        self.height = constants.cameraHeight   
+        self.x, self.y = (0,0)
+        self.player = player
+    
+    @property
+    def rectangle(self):
+
+        posRect = pygame.Rect((0,0), (constants.cameraWidth, constants.cameraHeight))
+
+        posRect.center = (self.x, self.y)
+
+        return posRect
+    
+    @property
+    def mapAddress(self):
+
+        mapX = self.x//constants.cellWidth
+        mapY = self.y//constants.cellHeight
+
+        return (mapX, mapY)
+
+    def update(self):
+        
+        targetX = (self.player.x * constants.cellWidth) + (constants.cellWidth/2)
+        targetY = (self.player.y * constants.cellHeight) + (constants.cellHeight/2)
+        
+        distanceX, distanceY = self.mapDistance((targetX, targetY))
+
+        self.x += int(distanceX)
+        self.y += int(distanceY)
+
+    def mapDistance(self, coords):
+
+        newX, newY = coords
+        distX = newX - self.x      
+        distY = newY - self.y
+
+        return (distX, distY)
+    
+    def camDist(self, coords):
+        winX, winY = coords
+
+        distX = winX - (self.width//2)
+        distY = winY - (self.height//2)
+
+        return (distX, distY)
+    
+    def winToMap(self, coords):
+
+        targetX, targetY = coords
+
+        #convert window coords to distance from camera
+        camDX, camDY = self.camDist((targetX,targetY))
+
+        mapPX = self.x + camDX
+        mapPY = self.y + camDY
+
+        return((mapPX, mapPY))
+
 #baseclass for an actor. Actor being any object that can interact with a surface
 class Actor:
-    def __init__(self, x, y, sprite, surface, map, enemyList, objName,creature = None, ai = None, container = None, item = None, equipment = None):
+    def __init__(self, x, y, sprite, surface, map, enemyList, objName,creature = None, ai = None, container = None, item = None, equipment = None, surfaceMap = None):
         self.x = x #map address
         self.y = y # map address
         self.objName = objName
@@ -429,6 +516,7 @@ class Actor:
         self.ai = AI()
         self.enemyList = enemyList
         self.objName = objName
+        self.surfaceMap = surfaceMap
        
         self.creature = creature
         if creature:
@@ -452,7 +540,7 @@ class Actor:
 
 
     def draw(self):
-        self.surface.blit(self.sprite, ( self.x*constants.cellWidth, self.y*constants.cellHeight ))
+        self.surfaceMap.blit(self.sprite, ( self.x*constants.cellWidth, self.y*constants.cellHeight ))
     def move(self,dx,dy):
         tileIsWall = ((self.map.getCurrentMap())[self.x + dx][self.y + dy].blockPath == True)
 
@@ -587,7 +675,7 @@ class Creature:
 
 #class for items. Item class contains different methods depending on what spells are in the game
 class Item:
-    def __init__(self, owner, player, nonPlayerList = None, weight = 0.0, volume = 0.0, healOrDamageVal = 0):
+    def __init__(self, owner, player, camera, nonPlayerList = None, weight = 0.0, volume = 0.0, healOrDamageVal = 0):
         self.weight = weight
         self.baseVolume = volume
         self.owner = owner
@@ -595,6 +683,7 @@ class Item:
         self.player = player
         self.value = healOrDamageVal
         self.nonPlayerList = nonPlayerList
+        self.camera = camera
     def pickUp(self, nonPlayerList):
         gameMessages = []
         if self.player.container:
@@ -637,7 +726,7 @@ class Item:
 
     def lightingSpell(self, value, nonPlayerList):
         
-        targetSelection = targetselect(self.player.surface, self.player, self.player.map, nonPlayerList)
+        targetSelection = targetselect(self.player.surface, self.player, self.player.map, nonPlayerList, self.player.surfaceMap, self.camera)
         pointSelected = targetSelection.menu_target_select((self.player.x, self.player.y),5,False, mark="X")
         listOfTiles = []
         gameMessages = []
@@ -657,7 +746,7 @@ class Item:
     
     def confusionSpell(self, numTurns, nonPlayerList):
 
-        targetSelection = targetselect(self.player.surface, self.player, self.player.map, nonPlayerList)
+        targetSelection = targetselect(self.player.surface, self.player, self.player.map, nonPlayerList, self.player.surfaceMap, self.camera)
         pointSelected = targetSelection.menu_target_select(mark="X")
 
         gameMessage = []
@@ -678,9 +767,8 @@ class Item:
 
     def FireballSpell(self, damage, nonPlayerList):
         
-        targetSelections = targetselect(self.player.surface, self.player, self.player.map, nonPlayerList)
+        targetSelections = targetselect(self.player.surface, self.player, self.player.map, nonPlayerList, self.player.surfaceMap, self.camera)
         pointSelected = targetSelections.menu_target_select((self.player.x, self.player.y),maxRange = 5, mark = "X", penetrateWalls= False, pierce_creature = False, radius= 1)
-        creature_hit = False
         gameMessages = []
         if pointSelected:
             tiles_to_dmg = self.player.map.mapRadiusCreate(pointSelected, 1)
@@ -819,7 +907,7 @@ class AIConfuse(AI):
         return message      
 #class to update the game's UI by updating/drawing the screen
 class GameDraw:
-    def __init__(self,surface, actor, map, nonPlayerList, clock, messages):
+    def __init__(self,surface, actor, map, nonPlayerList, clock, messages, surfaceMap, camera):
         self.surface = surface
         self.player = actor
         self.map = map
@@ -827,9 +915,17 @@ class GameDraw:
         self.clock = clock
         self.gameMessages = messages
         self.drawTextObject = drawText(self.surface,"default", constants.colorWhite,(0,0))
+        self.surfaceMap = surfaceMap
+        self.camera = camera
+
     def drawGame(self):
 
-        self.surface.fill(constants.colorDefaultBG)
+        self.surface.fill(constants.colorBlack)
+        
+        self.surfaceMap.fill(constants.colorBlack)
+        displayRect = pygame.Rect((50,50),(constants.cameraWidth, constants.cameraHeight) )
+        
+        self.camera.update()
 
         self.map.drawToMap(self.surface)
 
@@ -837,8 +933,11 @@ class GameDraw:
             isVisble = tcod.map_is_in_fov(self.map.FOVMAP,obj.x, obj.y)
             if isVisble:
                 obj.draw()
-                       
+
+        
         self.player.draw()
+        self.surface.blit(self.surfaceMap, (0,0), self.camera.rectangle)
+
         self.drawMessages()
 
         
@@ -849,7 +948,7 @@ class GameDraw:
         else:
             toDraw = self.gameMessages[-constants.numMessages:]
 
-        startY = constants.mapHeight*constants.cellHeight - (constants.numMessages * self.drawTextObject.textHeight()) -10
+        startY = constants.cameraHeight - (constants.numMessages * self.drawTextObject.textHeight()) -10
 
         i = 0
         for message, color in toDraw:
@@ -917,13 +1016,15 @@ class RectRoom:
 
 #class to handle the game's map
 class Map:
-    def __init__(self, fovCalculate, nonPlayerList, surface, player= None):
+    def __init__(self, fovCalculate, nonPlayerList, surface, player= None, surfaceMap = None, camera = None):
         # constructor uses tunnelling algorithm to create rooms
         self.fovCalculate = fovCalculate
         self.player = player
-        self.map = [[ tileStrucutre(True) for y in range(0,constants.mapHeight)] for x in range(0,constants.mapWidth)]
-
+        self.map = [[ tileStrucutre(True) for y in range(0,constants.mapWidth)] for x in range(0,constants.mapHeight)]
+        self.surfaceMap = surfaceMap
         self.listOfRooms = []
+
+        self.camera = camera
 
         for i in range(0, constants.mapMaxNumRooms):
             
@@ -933,7 +1034,6 @@ class Map:
             x = tcod.random_get_int(0, 2, constants.mapWidth - w -2)
             y = tcod.random_get_int(0, 2, constants.mapHeight - h -2)
 
-            print(x,y,w,h)
             newRoom = RectRoom((x,y), (w,h))
 
             failed = False
@@ -981,22 +1081,43 @@ class Map:
         return self.map
     
     def drawToMap(self, surface):
-        for x in range(0,constants.mapWidth):
-            for y in range(0,constants.mapHeight):
+
+        camX, camY = self.camera.mapAddress
+
+        displayMapW = constants.cameraWidth//constants.cellWidth
+        displayMapH = constants.cameraHeight//constants.cellHeight
+
+        renderWMax  = camX + (displayMapW//2)
+        renderWMin  = camX - (displayMapW//2)
+        
+        renderHMax  = camY + (displayMapH//2)
+        renderHMin  = camY - (displayMapH//2)
+
+        if renderHMin < 0:
+            renderHMin = 0
+        if renderWMin < 0:
+            renderWMin = 0
+        if renderWMax  > constants.mapWidth:
+            renderWMax = constants.mapWidth
+        if renderHMax > constants.mapHeight:
+            renderHMax = constants.mapHeight 
+
+        for x in range(renderWMin,renderWMax):
+            for y in range(renderHMin,renderHMax):
 
                 isVisible = tcod.map_is_in_fov(self.FOVMAP,x,y)
                
                 if isVisible:
                     self.map[x][y].explored = True
                     if self.map[x][y].blockPath == True:
-                        surface.blit(constants.wallSprite, ( x*constants.cellWidth, y*constants.cellHeight))
+                        self.surfaceMap.blit(constants.wallSprite, ( x*constants.cellWidth, y*constants.cellHeight))
                     else: 
-                        surface.blit(constants.floorSprite, ( x*constants.cellWidth, y*constants.cellHeight))
+                        self.surfaceMap.blit(constants.floorSprite, ( x*constants.cellWidth, y*constants.cellHeight))
                 elif(self.map[x][y].explored):
                     if self.map[x][y].blockPath == True:
-                        surface.blit(constants.wallExploredSprite, ( x*constants.cellWidth, y*constants.cellHeight))
+                        self.surfaceMap.blit(constants.wallExploredSprite, ( x*constants.cellWidth, y*constants.cellHeight))
                     else: 
-                        surface.blit(constants.floorExploredSprite, ( x*constants.cellWidth, y*constants.cellHeight))
+                        self.surfaceMap.blit(constants.floorExploredSprite, ( x*constants.cellWidth, y*constants.cellHeight))
     def makeFOV(self):
             self.FOVMAP = tcod.map_new(constants.mapWidth, constants.mapHeight)
             for y in range(constants.mapHeight):
@@ -1058,20 +1179,26 @@ class GameRunner:
         pygame.init()
         pygame.key.set_repeat(200, 70)
         self.clock = pygame.time.Clock()
-        self.surfaceMain = pygame.display.set_mode( (constants.mapWidth*constants.cellWidth,constants.mapHeight*constants.cellHeight) )
+        self.surfaceMain = pygame.display.set_mode( (constants.cameraWidth, constants.cameraHeight) )
+        
+        self.surfaceMap = pygame.Surface((constants.mapWidth * constants.cellWidth, constants.mapHeight * constants.cellHeight))
+
         self.fovCalculate = True
         self.gameMessages = []
         self.nonPlayerList = []
+        self.camera = Camera(None)
 
-        self.map = Map(self.fovCalculate, self.nonPlayerList, self.surfaceMain)
+        self.map = Map(self.fovCalculate, self.nonPlayerList, self.surfaceMain, surfaceMap=self.surfaceMap, camera= self.camera)
         self.currentRooms = self.map.listOfRooms
 
-        self.playerGen = genPlayer(self.surfaceMain, self.map, self.nonPlayerList)
+        self.playerGen = genPlayer(self.surfaceMain, self.map, self.nonPlayerList, self.surfaceMap)
         self.player = self.playerGen.generate(self.map.listOfRooms[0].center())
 
-        self.GameDrawer = GameDraw(self.surfaceMain,self.player, self.map, self.nonPlayerList, self.clock, self.gameMessages)
+        self.camera.player = self.player
+
+        self.GameDrawer = GameDraw(self.surfaceMain,self.player, self.map, self.nonPlayerList, self.clock, self.gameMessages, self.surfaceMap, self.camera)
         
-        self.menu = menu(self.surfaceMain, self.player, self.nonPlayerList, self.GameDrawer)
+        self.menu = menu(self.surfaceMain, self.player, self.nonPlayerList, self.surfaceMap, self.GameDrawer)
 
         self.map.player = self.player
 
@@ -1086,7 +1213,7 @@ class GameRunner:
                 x = tcod.random_get_int(0, room.x+1, room.x2 - 1)
                 y = tcod.random_get_int(0, room.y+1, room.y2 - 1)
 
-                newEnemy = genEnemies(self.surfaceMain, self.player, self.map, self.nonPlayerList)
+                newEnemy = genEnemies(self.surfaceMain, self.player, self.map, self.nonPlayerList, self.surfaceMap)
                 newEnemy.genEnemy((x,y))
  
             x = tcod.random_get_int(0, room.x+1, room.x2 - 1)
@@ -1094,8 +1221,8 @@ class GameRunner:
 
             if (x,y) is not (self.player.x , self.player.y): 
 
-                newItem = randomItemGeneration(self.surfaceMain, self.player, self.map, self.nonPlayerList)
-                newItem.genItem((x,y))
+                newItem = randomItemGeneration(self.surfaceMain, self.player, self.map, self.nonPlayerList, self.surfaceMap)
+                newItem.genItem((x,y), self.camera)
 
     def game_main_loop(self):
  
