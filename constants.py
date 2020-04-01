@@ -9,8 +9,8 @@ cellWidth = 32
 cellHeight = 32
 
 #MapTileSizes
-mapWidth = 40
-mapHeight = 40
+mapWidth = 20
+mapHeight = 20
 mapMaxNumRooms = 10
 
 #Room Limiations
@@ -60,3 +60,6 @@ shieldSprite = pygame.transform.scale(pygame.image.load('C:/ENGI5895SoftwareDesi
 lightningScrollSprite = pygame.transform.scale(pygame.image.load('C:/ENGI5895SoftwareDesign/Project/Sprites/Characters/lightningScroll.png'), (cellWidth, cellHeight))
 confusionScrollSprite = pygame.transform.scale(pygame.image.load('C:/ENGI5895SoftwareDesign/Project/Sprites/Characters/confusionScroll.png'), (cellWidth, cellHeight))
 fireballSprite = pygame.transform.scale(pygame.image.load('C:/ENGI5895SoftwareDesign/Project/Sprites/Characters/fireball.png'), (cellWidth, cellHeight))
+
+#map transition
+stairsSprite = pygame.transform.scale(pygame.image.load('C:/ENGI5895SoftwareDesign/Project/Sprites/Characters/stairs.png'), (cellWidth, cellHeight))

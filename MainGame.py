@@ -7,6 +7,24 @@ from typing import Tuple
 #game files
 import constants
 
+#class to handle putting stairs at a certain position
+class genStairs:
+    def __init__(self, surface, map, nonPlayerList, surfaceMap):
+        self.surface  = surface
+        self.map = map
+        self.nonPlayerList = nonPlayerList
+        self.surfaceMap = surfaceMap
+    
+    def genStairs(self, coords, downwards):
+        x,y = coords
+
+        if downwards:
+            stairs = Stairs(downwards)
+
+            stairsActor = Actor(x,y, constants.stairsSprite, self.surface, self.map, [], "Stairs", stairs= stairs, surfaceMap=self.surfaceMap)
+
+            self.nonPlayerList.append(stairsActor)
+
 class genPlayer:
 
     def __init__(self, surface, map, nonPlayerList, surfaceMap):
@@ -506,7 +524,7 @@ class Camera:
 
 #baseclass for an actor. Actor being any object that can interact with a surface
 class Actor:
-    def __init__(self, x, y, sprite, surface, map, enemyList, objName,creature = None, ai = None, container = None, item = None, equipment = None, surfaceMap = None):
+    def __init__(self, x, y, sprite, surface, map, enemyList, objName,creature = None, ai = None, container = None, item = None, equipment = None, surfaceMap = None, stairs = None):
         self.x = x #map address
         self.y = y # map address
         self.objName = objName
@@ -538,6 +556,11 @@ class Actor:
         if self.equipment:
             self.equipment.setOwner(self)
 
+        self.stairs = stairs
+        if stairs:
+            self.stairs.owner = self
+
+            self.item = Item(self, None, None)
 
     def draw(self):
         self.surfaceMap.blit(self.sprite, ( self.x*constants.cellWidth, self.y*constants.cellHeight ))
@@ -783,6 +806,10 @@ class Item:
             gameMessages = "Spell cancelled"
         return gameMessages
 
+#class to handle stairs
+class Stairs:
+    def __init__(self, downwards = True):
+        self.downwards = downwards
 
 class Equipment:
 
@@ -1175,7 +1202,7 @@ class Map:
 
 #Main Game class with main game loop
 class GameRunner:
-    def __init__(self):
+    def __init__(self, map = None):
         pygame.init()
         pygame.key.set_repeat(200, 70)
         self.clock = pygame.time.Clock()
@@ -1188,7 +1215,10 @@ class GameRunner:
         self.nonPlayerList = []
         self.camera = Camera(None)
 
-        self.map = Map(self.fovCalculate, self.nonPlayerList, self.surfaceMain, surfaceMap=self.surfaceMap, camera= self.camera)
+        if map:
+            self.map = map
+        else:
+            self.map = Map(self.fovCalculate, self.nonPlayerList, self.surfaceMain, surfaceMap=self.surfaceMap, camera= self.camera)
         self.currentRooms = self.map.listOfRooms
 
         self.playerGen = genPlayer(self.surfaceMain, self.map, self.nonPlayerList, self.surfaceMap)
@@ -1209,30 +1239,40 @@ class GameRunner:
 
         for i, room in enumerate(self.currentRooms):
 
-            if i !=0:
+            if i ==0:
+                self.player.x , self.player.y = room.center()
+            elif i == len(self.currentRooms)-1:
+                newStairs = genStairs(self.surfaceMain, self.map, self.nonPlayerList, self.surfaceMap)
+                newStairs.genStairs(room.center(), True)
+            else:
+                if i !=0:
+                    x = tcod.random_get_int(0, room.x+1, room.x2 - 1)
+                    y = tcod.random_get_int(0, room.y+1, room.y2 - 1)
+
+                    newEnemy = genEnemies(self.surfaceMain, self.player, self.map, self.nonPlayerList, self.surfaceMap)
+                    newEnemy.genEnemy((x,y))
+    
                 x = tcod.random_get_int(0, room.x+1, room.x2 - 1)
                 y = tcod.random_get_int(0, room.y+1, room.y2 - 1)
 
-                newEnemy = genEnemies(self.surfaceMain, self.player, self.map, self.nonPlayerList, self.surfaceMap)
-                newEnemy.genEnemy((x,y))
- 
-            x = tcod.random_get_int(0, room.x+1, room.x2 - 1)
-            y = tcod.random_get_int(0, room.y+1, room.y2 - 1)
+                if (x,y) is not (self.player.x , self.player.y): 
 
-            if (x,y) is not (self.player.x , self.player.y): 
+                    newItem = randomItemGeneration(self.surfaceMain, self.player, self.map, self.nonPlayerList, self.surfaceMap)
+                    newItem.genItem((x,y), self.camera)
 
-                newItem = randomItemGeneration(self.surfaceMain, self.player, self.map, self.nonPlayerList, self.surfaceMap)
-                newItem.genItem((x,y), self.camera)
 
     def game_main_loop(self):
  
         gameQuitStatus = False
+        TransNext = False
         while not gameQuitStatus:
             playerAction = "no-action"
             playerAction = self.handleKeys()
             self.map.calculateFOV()
             if playerAction == "QUIT":
                 gameQuitStatus = True
+                pygame.quit()
+                exit()
 
             if playerAction != "no-action":
                 for enemy in self.nonPlayerList:
@@ -1244,8 +1284,12 @@ class GameRunner:
             self.GameDrawer.drawGame()
             self.clock.tick(constants.gameFPS)
             pygame.display.flip()
-        pygame.quit()
-        exit()
+
+            if playerAction == "Transition Next":
+                gameQuitStatus = True
+                TransNext = True
+        
+        return (TransNext, self.map)
 
     def gameMessagesAppend(self, gameMessage, msgColor):
         self.gameMessages.append((gameMessage,msgColor))
@@ -1312,17 +1356,29 @@ class GameRunner:
                    if gameMessages != []:
                             for message in gameMessages:
                                 self.gameMessagesAppend(message,constants.colorWhite)
+
+                elif event.key == pygame.K_LSHIFT or event.key == pygame.K_RSHIFT:
+                    for obj in self.map.map_objects_atcoords(self.player.x, self.player.y, self.nonPlayerList):
+                        if obj.displayName == "Stairs":
+                            return "Transition Next"
                
-        return "no-action"
+        return "no-action"        
 
 #class to start the game. AKin to TicTacToeApplication in Assignment 1 of Software Design
 class MainGameApplication:
     def __init__(self):
         self.NewGame = GameRunner()
+        self.prevMaps = []
 
     def RunGame(self):
-        self.NewGame.game_main_loop()
+        mapTransitionNext = True
+        while(True):
+            if(mapTransitionNext == True):
+                self.NewGame = GameRunner()
+                mapTransitionNext, prevMap = self.NewGame.game_main_loop()
+                self.prevMaps.append(prevMap)
 
+#because python doesn't have a main function like Java or C++
 if __name__ == '__main__':
-    MainGame = MainGameApplication()
-    MainGame.RunGame()
+    newGame = MainGameApplication()
+    newGame.RunGame()
