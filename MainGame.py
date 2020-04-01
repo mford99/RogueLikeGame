@@ -83,7 +83,7 @@ class genCobra:
         CorpseItem = Item(None, self.player, healOrDamageVal = 8, camera=None)
         
         maxHealth = tcod.random_get_int(0,12,14)
-        baseAttck = tcod.random_get_int(0,2,4)
+        baseAttck = tcod.random_get_int(0,2,3)
 
         enemyCreature = Creature("Buns", hp = maxHealth, baseAtck = baseAttck)
         aiCom = AIChase()
@@ -197,7 +197,7 @@ class genConfusionSpell():
 
         return self.itemActor
 
-#CLASS FOR FIREBALL GENERATION FOR STEFAN TO DO
+#CLASS FOR FIREBALL GENERATION
 class genFireballSpell():
 
     def __init__(self,coords, surface, player, map, surfaceMap):
@@ -361,11 +361,12 @@ class targetselect:
             
             mapPixelX, mapPixelY = self.camera.winToMap((mouse_x, mouse_y))
 
-            mouse_x_rel = int(mapPixelX//constants.cellWidth)
-            mouse_y_rel = int(mapPixelY//constants.cellHeight)
+            mapPixelX = mapPixelX
+            mapPixelY = mapPixelY
 
-            print(mouse_x_rel, mouse_y_rel)
-            print(coordsOrigin)
+            mouse_x_rel = mapPixelX//constants.cellWidth
+            mouse_y_rel = mapPixelY//constants.cellHeight
+
             fullListTiles = []
             validListTiles = []
             if coordsOrigin:
@@ -392,30 +393,27 @@ class targetselect:
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if event.button ==1:
                         return validListTiles[-1]
-            
-                
-        self.surface.fill(constants.colorBlack)
-        
-        self.surfaceMap.fill(constants.colorBlack)
-                
-        self.camera.update()
-
-        self.map.drawToMap(self.surfaceMap)
-
-
-        for obj in self.nonPlayerList:
-            isVisble = tcod.map_is_in_fov(self.map.FOVMAP,obj.x, obj.y)
-            if isVisble:
-                obj.draw()
-
             center = False
             if mark:
                 center = True
 
+            self.surface.fill(constants.colorBlack)
+        
+            self.surfaceMap.fill(constants.colorBlack)
+                
+            self.camera.update()
+
+            self.map.drawToMap(self.surface)
+
+            for obj in self.nonPlayerList:
+                isVisble = tcod.map_is_in_fov(self.map.FOVMAP,obj.x, obj.y)
+                if isVisble:
+                    obj.draw()
+
+        
+            self.player.draw()
+
             #may need to change later for firespell and lighting spell
-            self.player.draw()
-            self.player.draw()
-            self.surface.blit(self.surfaceMap, (0,0), self.camera.rectangle)
             for coords in validListTiles:
                 x,y = coords
                 if coords == validListTiles[-1]:
@@ -426,6 +424,7 @@ class targetselect:
                         self.draw_tile_rect((x, y))
                 else:
                      self.draw_tile_rect((x,y))
+            self.surface.blit(self.surfaceMap, (0,0), self.camera.rectangle)
             pygame.display.flip()
            # self.clock.tick(constants.gameFPS)
 
@@ -488,8 +487,8 @@ class Camera:
     def camDist(self, coords):
         winX, winY = coords
 
-        distX = winX - (self.width/2)
-        distY = winY - (self.height/2)
+        distX = winX - (self.width//2)
+        distY = winY - (self.height//2)
 
         return (distX, distY)
     
@@ -501,13 +500,9 @@ class Camera:
         camDX, camDY = self.camDist((targetX,targetY))
 
         mapPX = self.x + camDX
-        mapPY = self.x + camDY
+        mapPY = self.y + camDY
 
         return((mapPX, mapPY))
-
-        #distance from cap -> map coord
-
-
 
 #baseclass for an actor. Actor being any object that can interact with a surface
 class Actor:
@@ -1021,13 +1016,15 @@ class RectRoom:
 
 #class to handle the game's map
 class Map:
-    def __init__(self, fovCalculate, nonPlayerList, surface, player= None, surfaceMap = None):
+    def __init__(self, fovCalculate, nonPlayerList, surface, player= None, surfaceMap = None, camera = None):
         # constructor uses tunnelling algorithm to create rooms
         self.fovCalculate = fovCalculate
         self.player = player
-        self.map = [[ tileStrucutre(True) for y in range(0,constants.mapHeight)] for x in range(0,constants.mapWidth)]
+        self.map = [[ tileStrucutre(True) for y in range(0,constants.mapWidth)] for x in range(0,constants.mapHeight)]
         self.surfaceMap = surfaceMap
         self.listOfRooms = []
+
+        self.camera = camera
 
         for i in range(0, constants.mapMaxNumRooms):
             
@@ -1037,7 +1034,6 @@ class Map:
             x = tcod.random_get_int(0, 2, constants.mapWidth - w -2)
             y = tcod.random_get_int(0, 2, constants.mapHeight - h -2)
 
-            print(x,y,w,h)
             newRoom = RectRoom((x,y), (w,h))
 
             failed = False
@@ -1085,8 +1081,29 @@ class Map:
         return self.map
     
     def drawToMap(self, surface):
-        for x in range(0,constants.mapWidth):
-            for y in range(0,constants.mapHeight):
+
+        camX, camY = self.camera.mapAddress
+
+        displayMapW = constants.cameraWidth//constants.cellWidth
+        displayMapH = constants.cameraHeight//constants.cellHeight
+
+        renderWMax  = camX + (displayMapW//2)
+        renderWMin  = camX - (displayMapW//2)
+        
+        renderHMax  = camY + (displayMapH//2)
+        renderHMin  = camY - (displayMapH//2)
+
+        if renderHMin < 0:
+            renderHMin = 0
+        if renderWMin < 0:
+            renderWMin = 0
+        if renderWMax  > constants.mapWidth:
+            renderWMax = constants.mapWidth
+        if renderHMax > constants.mapHeight:
+            renderHMax = constants.mapHeight 
+
+        for x in range(renderWMin,renderWMax):
+            for y in range(renderHMin,renderHMax):
 
                 isVisible = tcod.map_is_in_fov(self.FOVMAP,x,y)
                
@@ -1169,17 +1186,19 @@ class GameRunner:
         self.fovCalculate = True
         self.gameMessages = []
         self.nonPlayerList = []
+        self.camera = Camera(None)
 
-        self.map = Map(self.fovCalculate, self.nonPlayerList, self.surfaceMain, surfaceMap=self.surfaceMap)
+        self.map = Map(self.fovCalculate, self.nonPlayerList, self.surfaceMain, surfaceMap=self.surfaceMap, camera= self.camera)
         self.currentRooms = self.map.listOfRooms
 
         self.playerGen = genPlayer(self.surfaceMain, self.map, self.nonPlayerList, self.surfaceMap)
         self.player = self.playerGen.generate(self.map.listOfRooms[0].center())
 
-        self.camera = Camera(self.player)
+        self.camera.player = self.player
+
         self.GameDrawer = GameDraw(self.surfaceMain,self.player, self.map, self.nonPlayerList, self.clock, self.gameMessages, self.surfaceMap, self.camera)
         
-        self.menu = menu(self.surfaceMain, self.player, self.nonPlayerList, self.GameDrawer)
+        self.menu = menu(self.surfaceMain, self.player, self.nonPlayerList, self.surfaceMap, self.GameDrawer)
 
         self.map.player = self.player
 

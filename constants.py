@@ -9,8 +9,8 @@ cellWidth = 32
 cellHeight = 32
 
 #MapTileSizes
-mapWidth = 50
-mapHeight = 50
+mapWidth = 40
+mapHeight = 40
 mapMaxNumRooms = 10
 
 #Room Limiations
