@@ -9,6 +9,32 @@ from typing import Tuple
 #game files
 import constants
 
+
+
+
+#class to handle player death
+class victoryMenu:
+    #fills screen with grey and forces user to quit game
+    #also displays a congratulations message
+    def startMenu(self, surface):
+        while True:
+            surface.fill(constants.colorDefaultBG)
+            deathMessageCoords = (constants.cameraWidth/2, (constants.cameraHeight/2) - 40)
+            drawDeathMessage = drawText(surface, "You have beaten the game! Congratulations! Press E to exit the game", constants.colorWhite, deathMessageCoords)
+            drawDeathMessage.drawOnSurface(constants.colorGrey, center=True)
+
+            listOfEvents = pygame.event.get()
+
+            for event in listOfEvents:
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    exit()
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_e:
+                        pygame.quit()
+                        exit()
+            pygame.display.update()
+
 #  ____             _   _       __  __                  
 # |  _ \  ___  __ _| |_| |__   |  \/  | ___ _ __  _   _ 
 # | | | |/ _ \/ _` | __| '_ \  | |\/| |/ _ \ '_ \| | | |
@@ -1594,6 +1620,9 @@ class MainGameApplication:
     def RunGame(self):
         mapTransitionNext = True
         while(True):
+            if(len(self.prevMaps) >=5):
+                victory = victoryMenu()
+                victory.startMenu(self.surface)
             if(mapTransitionNext == True):
                 self.NewGame = GameRunner(self.surface, self.player)
                 mapTransitionNext, prevMap, self.player = self.NewGame.game_main_loop()
