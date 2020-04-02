@@ -804,7 +804,7 @@ class Item:
 
                 oldAI = target.ai
 
-                if target.creathre:
+                if target.creature:
                     target.ai = AIConfuse(oldAI, numTurns)
                     target.ai.owner = target
                     
