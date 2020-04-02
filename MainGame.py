@@ -1,6 +1,8 @@
 #third party libraries
 import pygame
 import tcod
+
+#python libraries
 import math
 from typing import Tuple
 
@@ -89,6 +91,7 @@ class genEnemies:
         self.surfaceMap = surfaceMap
     
     def genEnemy(self, coords):
+        #generates random number between 1 and 100
         randomNum = tcod.random_get_int(0,1,100)
 
         if randomNum > 15: 
@@ -117,7 +120,9 @@ class genCrab:
         x,y = self.coords
         CorpseItem = Item(None, self.player, healOrDamageVal = 5, camera = None)
 
+        #generates random number between 7 and 10
         maxHealth = tcod.random_get_int(0,7,10)
+
         baseAttck = tcod.random_get_int(0,2,3)
 
         enemyCreature = Creature("Mr. Crabs", maxHealth, baseAttck)
@@ -140,6 +145,7 @@ class genCobra:
         x,y = self.coords
         CorpseItem = Item(None, self.player, healOrDamageVal = 8, camera=None)
         
+        #generates random number between 12 and 14
         maxHealth = tcod.random_get_int(0,12,14)
         baseAttck = tcod.random_get_int(0,2,3)
 
@@ -158,6 +164,7 @@ class randomItemGeneration:
         self.surfaceMap = surfaceMap
     
     def genItem(self, coords, camera):
+        #generates random number between 1 and 5
         randomNum = tcod.random_get_int(0,1,5)
 
         if randomNum == 1: 
@@ -487,6 +494,7 @@ class targetselect:
             self.map.drawToMap(self.surface)
 
             for obj in self.nonPlayerList:
+                #computes what is in FOV using tcod method
                 isVisble = tcod.map_is_in_fov(self.map.FOVMAP,obj.x, obj.y)
                 if isVisble:
                     obj.draw()
@@ -1319,9 +1327,11 @@ class Map:
                     else: 
                         self.surfaceMap.blit(constants.floorExploredSprite, ( x*constants.cellWidth, y*constants.cellHeight))
     def makeFOV(self):
+            #creates new FOV MAP
             self.FOVMAP = tcod.map_new(constants.mapWidth, constants.mapHeight)
             for y in range(constants.mapHeight):
                 for x in range(constants.mapWidth):
+                    #sets properties of FOV Map for proper map FOV calculations
                     tcod.map_set_properties(self.FOVMAP, x, y, not self.map[x][y].blockPath, not self.map[x][y].blockPath)
 
     def calculateFOV(self):
@@ -1339,8 +1349,10 @@ class Map:
         x1, y1 = coords1
         x2, y2 = coords2
 
+        #generates a line between coordinates
         tcod.line_init(x1, y1, x2, y2)
 
+        #steps through each point on the line
         calcX, calcY = tcod.line_step()
 
         coordList = []
