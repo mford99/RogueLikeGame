@@ -7,8 +7,15 @@ from typing import Tuple
 #game files
 import constants
 
+#  ____             _   _       __  __                  
+# |  _ \  ___  __ _| |_| |__   |  \/  | ___ _ __  _   _ 
+# | | | |/ _ \/ _` | __| '_ \  | |\/| |/ _ \ '_ \| | | |
+# | |_| |  __/ (_| | |_| | | | | |  | |  __/ | | | |_| |
+# |____/ \___|\__,_|\__|_| |_| |_|  |_|\___|_| |_|\__,_|
+
 #class to handle player death
 class deathMenu:
+    #fills screen with grey and forces user to quit game
     def deathMenu(self, surface):
         while True:
             surface.fill(constants.colorDefaultBG)
@@ -27,6 +34,14 @@ class deathMenu:
                         pygame.quit()
                         exit()
             pygame.display.update()
+
+#   ____                           _                 
+#  / ___| ___ _ __   ___ _ __ __ _| |_ ___  _ __ ___ 
+# | |  _ / _ \ '_ \ / _ \ '__/ _` | __/ _ \| '__/ __|
+# | |_| |  __/ | | |  __/ | | (_| | || (_) | |  \__ \
+#  \____|\___|_| |_|\___|_|  \__,_|\__\___/|_|  |___/
+
+
 #class to handle putting stairs at a certain position
 class genStairs:
     def __init__(self, surface, map, nonPlayerList, surfaceMap):
@@ -45,6 +60,7 @@ class genStairs:
 
             self.nonPlayerList.append(stairsActor)
 
+#class to place player
 class genPlayer:
 
     def __init__(self, surface, map, nonPlayerList, surfaceMap):
@@ -61,6 +77,8 @@ class genPlayer:
         self.nonPlayerList.append(player)
         return player
 
+#class to place enemies randomly. 
+#15% chance to create cobra which is a harder enemy than the crab
 class genEnemies:
     
     def __init__(self,surface, player, map, nonPlayerList, surfaceMap):
@@ -84,6 +102,7 @@ class genEnemies:
             self.nonPlayerList.append(cobraEnemyActor)
             return cobraEnemyActor
 
+#class to create a crab
 class genCrab:
     def __init__(self,coords, surface, player, map, nonPlayerList, surfaceMap):
         self.coords = coords
@@ -106,6 +125,7 @@ class genCrab:
         self.itemActor = Actor(x,y, constants.mainEnemySprite, self.surface, self.map, self.nonPlayerList, "Crab", enemyCreature ,item = CorpseItem, ai = aiCom, surfaceMap=self.surfaceMap)
         return self.itemActor
 
+#class to create cobra
 class genCobra:
     def __init__(self,coords, surface, player, map, nonPlayerList, surfaceMap):
         self.coords = coords
@@ -128,6 +148,7 @@ class genCobra:
         self.itemActor = Actor(x,y, constants.rareCobraSprite, self.surface, self.map, self.nonPlayerList, "Cobra", enemyCreature, item = CorpseItem, ai = aiCom, surfaceMap = self.surfaceMap)
         return self.itemActor
 
+#class to randomly generate an item
 class randomItemGeneration:
     def __init__(self,surface, player, map, nonPlayerList, surfaceMap):
         self.surface = surface
@@ -165,6 +186,7 @@ class randomItemGeneration:
             self.nonPlayerList.append(FireballSpellActor)
             return FireballSpellActor
 
+#class to generate sword
 class genSword():
     
     def __init__(self,coords, surface, player, map, surfaceMap):
@@ -182,6 +204,8 @@ class genSword():
 
         self.itemActor = Actor(x,y, constants.swordSprite, self.surface, self.map, [], "Sword",equipment= Sword, surfaceMap= self.surfaceMap)
         return self.itemActor
+
+#class to create shield
 class genShield():
     
     def __init__(self,coords, surface, player, map, surfaceMap):
@@ -216,6 +240,7 @@ class genLighting():
 
         self.itemActor = Actor(x,y, constants.lightningScrollSprite, self.surface, self.map, [], "Lighting Scroll", item = LightningItem, surfaceMap = self.surfaceMap)
         return self.itemActor
+
 #class for confusion spell with random time and place
 class genConfusionSpell():
     
@@ -235,7 +260,7 @@ class genConfusionSpell():
 
         return self.itemActor
 
-#CLASS FOR FIREBALL GENERATION
+#class for fireball generation
 class genFireballSpell():
 
     def __init__(self,coords, surface, player, map, surfaceMap):
@@ -254,6 +279,12 @@ class genFireballSpell():
 
         return self.itemActor
 
+#  __  __ _____ _   _ _   _ 
+# |  \/  | ____| \ | | | | |
+# | |\/| |  _| |  \| | | | |
+# | |  | | |___| |\  | |_| |
+# |_|  |_|_____|_| \_|\___/ 
+
 #class for a menu such as an inventory menu and a menu that pauses the game
 class menu():
     def __init__(self,surface, player, nonPlayerList, surfaceMap, GameDrawer = None):
@@ -261,6 +292,8 @@ class menu():
         self.player = player
         self.nonPlayerList = nonPlayerList
         self.surfaceMap = surfaceMap
+    #pause menu doesn't do much right now, but in the future if animations are added then it 
+    #would do more
     def menuPause(self):
 
         windowsWidth = constants.cameraWidth
@@ -320,6 +353,7 @@ class menu():
 
                     if event.key == pygame.K_i:
                         menuClose = True
+                #handles user clicking on an item    
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if event.button == 1:
                         if (mouseInWindow and 
@@ -378,6 +412,15 @@ class menu():
             self.surface.blit(inventorySurface, ((menuX),(menuY)))
             pygame.display.update()
         return gameMessages
+
+
+#  _                       _              _           _   _             
+# | |_ __ _ _ __ __ _  ___| |_   ___  ___| | ___  ___| |_(_) ___  _ __  
+# | __/ _` | '__/ _` |/ _ \ __| / __|/ _ \ |/ _ \/ __| __| |/ _ \| '_ \ 
+# | || (_| | | | (_| |  __/ |_  \__ \  __/ |  __/ (__| |_| | (_) | | | |
+#  \__\__,_|_|  \__, |\___|\__| |___/\___|_|\___|\___|\__|_|\___/|_| |_|
+#               |___/ 
+
 
 #class for selecting a target on the screen       
 class targetselect:
@@ -451,7 +494,6 @@ class targetselect:
         
             self.player.draw()
 
-            #may need to change later for firespell and lighting spell
             for coords in validListTiles:
                 x,y = coords
                 if coords == validListTiles[-1]:
@@ -464,7 +506,6 @@ class targetselect:
                      self.draw_tile_rect((x,y))
             self.surface.blit(self.surfaceMap, (0,0), self.camera.rectangle)
             pygame.display.flip()
-           # self.clock.tick(constants.gameFPS)
 
     def draw_tile_rect(self,coords, mark = None, center = False):
         x,y= coords
@@ -479,6 +520,14 @@ class targetselect:
             
         self.surfaceMap.blit(new_surface,(new_x,new_y))
 
+
+#   ____                               
+#  / ___|__ _ _ __ ___   ___ _ __ __ _ 
+# | |   / _` | '_ ` _ \ / _ \ '__/ _` |
+# | |__| (_| | | | | | |  __/ | | (_| |
+#  \____\__,_|_| |_| |_|\___|_|  \__,_|
+
+#class for a camera which follows the player
 class Camera:
 
     def __init__(self, player):
@@ -541,6 +590,13 @@ class Camera:
         mapPY = self.y + camDY
 
         return((mapPX, mapPY))
+
+
+#     _        _             
+#    / \   ___| |_ ___  _ __ 
+#   / _ \ / __| __/ _ \| '__|
+#  / ___ \ (__| || (_) | |   
+# /_/   \_\___|\__\___/|_|   
 
 #baseclass for an actor. Actor being any object that can interact with a surface
 class Actor:
@@ -661,6 +717,13 @@ class Actor:
         else:
             return self.objName
 
+#   ____                _                  
+#  / ___|_ __ ___  __ _| |_ _   _ _ __ ___ 
+# | |   | '__/ _ \/ _` | __| | | | '__/ _ \
+# | |___| | |  __/ (_| | |_| |_| | | |  __/
+#  \____|_|  \___|\__,_|\__|\__,_|_|  \___|
+
+
 #class for creatures which are controlled by actors
 class Creature:
     def __init__(self, name, hp = 10, baseAtck = 2, baseDef = 0):
@@ -718,6 +781,13 @@ class Creature:
         else:
             self.hp = min(self.hp+value,self.maxHp)
             return "Consumed corpse to heal for " + str(value)
+
+
+#  ___ _                 
+# |_ _| |_ ___ _ __ ___  
+#  | || __/ _ \ '_ ` _ \ 
+#  | || ||  __/ | | | | |
+# |___|\__\___|_| |_| |_|
 
 #class for items. Item class contains different methods depending on what spells are in the game
 class Item:
@@ -832,10 +902,27 @@ class Item:
             gameMessages = "Spell cancelled"
         return gameMessages
 
+
+#  ____  _        _          
+# / ___|| |_ __ _(_)_ __ ___ 
+# \___ \| __/ _` | | '__/ __|
+#  ___) | || (_| | | |  \__ \
+# |____/ \__\__,_|_|_|  |___/
+
 #class to handle stairs
+#will be more complex if stairs can go up and down
+#for now, can only go down
 class Stairs:
     def __init__(self, downwards = True):
         self.downwards = downwards
+
+#  _____            _                            _   
+# | ____|__ _ _   _(_)_ __  _ __ ___   ___ _ __ | |_ 
+# |  _| / _` | | | | | '_ \| '_ ` _ \ / _ \ '_ \| __|
+# | |__| (_| | |_| | | |_) | | | | | |  __/ | | | |_ 
+# |_____\__, |\__,_|_| .__/|_| |_| |_|\___|_| |_|\__|
+#          |_|       |_|               
+
 
 class Equipment:
 
@@ -899,6 +986,13 @@ class Equipment:
     def use(self, nonPlayerList, equip = True):
         return self.toggleEquipped()
 
+
+#   ____            _        _                 
+#  / ___|___  _ __ | |_ __ _(_)_ __   ___ _ __ 
+# | |   / _ \| '_ \| __/ _` | | '_ \ / _ \ '__|
+# | |__| (_) | | | | || (_| | | | | |  __/ |   
+#  \____\___/|_| |_|\__\__,_|_|_| |_|\___|_|   
+
 #class for  a container. I.e just a list that is connected to a certain actor
 class Container :
     def __init__(self, volume = 10.0, inventory = []):
@@ -916,12 +1010,24 @@ class Container :
         equippedItems = [obj for obj in self.inventory if obj.equipment != None and obj.equipment.equipped]
         return equippedItems
 
+
+#  _____ _ _        ____  _                   _                  
+# |_   _(_) | ___  / ___|| |_ _ __ _   _  ___| |_ _   _ _ __ ___ 
+#   | | | | |/ _ \ \___ \| __| '__| | | |/ __| __| | | | '__/ _ \
+#   | | | | |  __/  ___) | |_| |  | |_| | (__| |_| |_| | | |  __/
+#   |_| |_|_|\___| |____/ \__|_|   \__,_|\___|\__|\__,_|_|  \___|
+
 #class for an individual tile on the map
 class tileStrucutre:
     def __init__(self, blockPath):
         self.blockPath = blockPath
         self.explored = False
-        
+
+#     _    ___ 
+#    / \  |_ _|
+#   / _ \  | | 
+#  / ___ \ | | 
+# /_/   \_\___|  
 #class to handle AI for the enemies
 class AI:
     def __init__(self):
@@ -957,7 +1063,14 @@ class AIConfuse(AI):
         else:
             self.owner.ai = self.oldAI
             message = [self.owner.displayName + " is no longer confused"]
-        return message      
+        return message    
+
+#   ____                        ____                     
+#  / ___| __ _ _ __ ___   ___  |  _ \ _ __ __ ___      __
+# | |  _ / _` | '_ ` _ \ / _ \ | | | | '__/ _` \ \ /\ / /
+# | |_| | (_| | | | | | |  __/ | |_| | | | (_| |\ V  V / 
+#  \____|\__,_|_| |_| |_|\___| |____/|_|  \__,_| \_/\_/  
+
 #class to update the game's UI by updating/drawing the screen
 class GameDraw:
     def __init__(self,surface, actor, map, nonPlayerList, clock, messages, surfaceMap, camera):
@@ -1011,6 +1124,13 @@ class GameDraw:
             self.drawTextObject.drawOnSurface(constants.colorBlack)
             i+=1
 
+#  ____                       _____         _   
+# |  _ \ _ __ __ ___      __ |_   _|____  _| |_ 
+# | | | | '__/ _` \ \ /\ / /   | |/ _ \ \/ / __|
+# | |_| | | | (_| |\ V  V /    | |  __/>  <| |_ 
+# |____/|_|  \__,_| \_/\_/     |_|\___/_/\_\\__|
+
+
 #class to handle displaying a singular text string to a surface
 class drawText:
     def __init__(self,surface,text : str, textColour, coords : Tuple[int,int]):
@@ -1044,6 +1164,13 @@ class drawText:
     def textWidth(self):
         return self.textRect.width
 
+
+#  ____                       
+# |  _ \ ___   ___  _ __ ___  
+# | |_) / _ \ / _ \| '_ ` _ \ 
+# |  _ < (_) | (_) | | | | | |
+# |_| \_\___/ \___/|_| |_| |_|
+
 #class for a singular rectangle room
 class RectRoom:
     def __init__(self,coords, size):
@@ -1067,12 +1194,28 @@ class RectRoom:
         
         return objectsIntersect
 
+
+
+#  __  __             
+# |  \/  | __ _ _ __  
+# | |\/| |/ _` | '_ \ 
+# | |  | | (_| | |_) |
+# |_|  |_|\__,_| .__/ 
+#              |_|    
+
 #class to handle the game's map
+#also calculates FOV using tcod library
 class Map:
     def __init__(self, fovCalculate, nonPlayerList, surface, player= None, surfaceMap = None, camera = None):
         # constructor uses tunnelling algorithm to create rooms
+        #tunneling algo basically does as follows:
+        #  1: Create empty Map
+        #   2: Create room and place room on map if it doesn't intersect other rooms
+        #   3: create path from center of last placed room to current room if room is not first room
+        #   4: repeat until the max number of rooms that can be tried to be placed is reached
         self.fovCalculate = fovCalculate
         self.player = player
+        #1. create empty map
         self.map = [[ tileStrucutre(True) for y in range(0,constants.mapWidth)] for x in range(0,constants.mapHeight)]
         self.surfaceMap = surfaceMap
         self.listOfRooms = []
@@ -1087,15 +1230,17 @@ class Map:
             x = tcod.random_get_int(0, 2, constants.mapWidth - w -2)
             y = tcod.random_get_int(0, 2, constants.mapHeight - h -2)
 
+            #create new room
             newRoom = RectRoom((x,y), (w,h))
 
             failed = False
 
+            #check if room intersects another room
             for otherRoom in self.listOfRooms:
                 if newRoom.intersect(otherRoom):
                     failed = True
                     break
-           
+           #place room and create tunnel if room is good to be placed
             if not failed:
                 self.createRoom(newRoom)
                 currentCenter = newRoom.center()
@@ -1133,6 +1278,8 @@ class Map:
     def getCurrentMap(self):
         return self.map
     
+    #method to draw to the map based on if a map's blockPath is true or false
+    #only draws what the user can see to improve performance
     def drawToMap(self, surface):
 
         camX, camY = self.camera.mapAddress
@@ -1226,6 +1373,13 @@ class Map:
                 tile_list.append((x,y))
         return tile_list
 
+
+#   ____                        ____                              
+#  / ___| __ _ _ __ ___   ___  |  _ \ _   _ _ __  _ __   ___ _ __ 
+# | |  _ / _` | '_ ` _ \ / _ \ | |_) | | | | '_ \| '_ \ / _ \ '__|
+# | |_| | (_| | | | | | |  __/ |  _ <| |_| | | | | | | |  __/ |   
+#  \____|\__,_|_| |_| |_|\___| |_| \_\\__,_|_| |_|_| |_|\___|_|  
+
 #Main Game class with main game loop
 class GameRunner:
     def __init__(self, surface, map = None):
@@ -1284,7 +1438,7 @@ class GameRunner:
                     newItem = randomItemGeneration(self.surfaceMain, self.player, self.map, self.nonPlayerList, self.surfaceMap)
                     newItem.genItem((x,y), self.camera)
 
-
+    #main game loop 
     def game_main_loop(self):
  
         gameQuitStatus = False
@@ -1315,9 +1469,11 @@ class GameRunner:
         
         return (TransNext, self.map)
 
+    #append a message to be draw to the screen
     def gameMessagesAppend(self, gameMessage, msgColor):
         self.gameMessages.append((gameMessage,msgColor))
      
+    #handle keyboard input
     def handleKeys(self):
         events = pygame.event.get()
         for event in events:
@@ -1403,6 +1559,20 @@ class MainGameApplication:
                 mapTransitionNext, prevMap = self.NewGame.game_main_loop()
                 self.prevMaps.append(prevMap)
 
+
+#  _   _ ___      _    _   _ ____    __  __    _    ___ _   _ 
+# | | | |_ _|    / \  | \ | |  _ \  |  \/  |  / \  |_ _| \ | |
+# | | | || |    / _ \ |  \| | | | | | |\/| | / _ \  | ||  \| |
+# | |_| || |   / ___ \| |\  | |_| | | |  | |/ ___ \ | || |\  |
+#  \___/|___| /_/   \_\_| \_|____/  |_|  |_/_/   \_\___|_| \_|
+                                                            
+#  __  __ _____ _   _ _   _ 
+# |  \/  | ____| \ | | | | |
+# | |\/| |  _| |  \| | | | |
+# | |  | | |___| |\  | |_| |
+# |_|  |_|_____|_| \_|\___/ 
+
+#class for a single UI Button
 class UIButton:
 
     def __init__(self, surface, buttonText, size, centerCoords,
