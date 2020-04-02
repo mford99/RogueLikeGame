@@ -1202,11 +1202,9 @@ class Map:
 
 #Main Game class with main game loop
 class GameRunner:
-    def __init__(self, map = None):
-        pygame.init()
-        pygame.key.set_repeat(200, 70)
+    def __init__(self, surface, map = None):
         self.clock = pygame.time.Clock()
-        self.surfaceMain = pygame.display.set_mode( (constants.cameraWidth, constants.cameraHeight) )
+        self.surfaceMain = surface
         
         self.surfaceMap = pygame.Surface((constants.mapWidth * constants.cellWidth, constants.mapHeight * constants.cellHeight))
 
@@ -1366,19 +1364,123 @@ class GameRunner:
 
 #class to start the game. AKin to TicTacToeApplication in Assignment 1 of Software Design
 class MainGameApplication:
-    def __init__(self):
-        self.NewGame = GameRunner()
+    def __init__(self, surface):
+        self.NewGame = GameRunner(surface)
         self.prevMaps = []
+        self.surface = surface
 
     def RunGame(self):
         mapTransitionNext = True
         while(True):
             if(mapTransitionNext == True):
-                self.NewGame = GameRunner()
+                self.NewGame = GameRunner(self.surface)
                 mapTransitionNext, prevMap = self.NewGame.game_main_loop()
                 self.prevMaps.append(prevMap)
 
+class UIButton:
+
+    def __init__(self, surface, buttonText, size, centerCoords,
+                 colorBoxMouseOver = constants.colorRed ,
+                 colorBoxDefault = constants.colorGreen,
+                 colorTextMouseover = constants.colorGrey,
+                 colorTextDefaultault = constants.colorGrey):
+
+        self.surface = surface
+        self.buttonText = buttonText
+        self.size = size
+        self.centerCoords = centerCoords
+
+        self.cBoxMO = colorBoxMouseOver
+        self.cBoxDefaultault = colorBoxDefault
+        self.cTextMO = colorTextMouseover
+        self.cTextDefaultault = colorTextDefaultault
+        self.CCBox = colorBoxDefault
+        self.CCTextext = colorTextDefaultault
+
+        self.rect = pygame.Rect((0, 0), size)
+        self.rect.center = centerCoords
+
+    def update(self, player_input):
+
+        mouse_clicked = False
+
+        local_events, local_mousepos = player_input
+        mouse_x, mouse_y = local_mousepos
+
+        mouse_over = (   mouse_x >= self.rect.left
+                     and mouse_x <= self.rect.right
+                     and mouse_y >= self.rect.top
+                     and mouse_y <= self.rect.bottom )
+
+        for event in local_events:
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1: mouse_clicked = True
+
+        if mouse_over and mouse_clicked:
+            return True
+
+        if mouse_over:
+            self.CCBox = self.cBoxMO
+            self.CCTextext = self.cTextMO
+        else:
+            self.CCBox = self.cBoxDefaultault
+            self.CCTextext = self.cTextDefaultault
+
+    def draw(self):
+
+        pygame.draw.rect(self.surface, self.CCBox, self.rect)
+        drawButton = drawText (self.surface, self.buttonText, self.CCTextext, self.centerCoords)
+        drawButton.drawOnSurface(self.CCBox, None, True)
+
+
+
+#main menu that the user sees once they first start the game
+class MainMenu:
+
+    def __init__(self):
+        pygame.init()
+        pygame.key.set_repeat(200, 70)
+        self.surface = pygame.display.set_mode( (constants.cameraWidth, constants.cameraHeight) )
+
+    def startMenu(self):
+        menuRunning = True
+
+        titleY = (constants.cameraHeight/2) - 40
+        titleText = "Python RogueLike Game!"
+        titleCoords = (constants.cameraWidth/2, (constants.cameraHeight/2) - 40)
+
+        testButton = UIButton(self.surface, 
+                               "Start Game", 
+                               (100,35), 
+                               (constants.cameraWidth/2, titleY + 40))
+        while menuRunning:
+
+            listOfEvents = pygame.event.get()
+            mousePosition = pygame.mouse.get_pos()
+
+            playerInput = (listOfEvents, mousePosition)
+
+            for event in listOfEvents:
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    exit()
+
+            self.surface.fill(constants.colorDefaultBG)
+
+            drawTitle = drawText(self.surface, titleText, constants.colorRed, titleCoords)
+            drawTitle.drawOnSurface(constants.colorBlack, center=True)
+
+            menuRunning = not testButton.update(playerInput)
+
+            testButton.draw()
+
+            pygame.display.update()
+    
+        newGame = MainGameApplication(self.surface)
+        newGame.RunGame()
+    
+
 #because python doesn't have a main function like Java or C++
 if __name__ == '__main__':
-    newGame = MainGameApplication()
-    newGame.RunGame()
+    mainMenu = MainMenu()
+    mainMenu.startMenu()
