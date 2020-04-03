@@ -472,9 +472,9 @@ class targetselect:
 
     def menu_target_select(self, coordsOrigin = None, maxRange = None, penetrateWalls = True, mark = None, pierce_creature = True, radius = None):
         menuClose = False
-        print("INSIDE TARGET SEL")
-        print(self.map)
-        print(self.player)
+        
+        
+        
         while not menuClose:
             #get mouse position
             mouse_x, mouse_y = pygame.mouse.get_pos()
@@ -872,9 +872,6 @@ class Item:
     # will call different methods depending on 
     # what the actor's name is. TO BE FINSIHED
     def use(self, nonPlayerList):
-        print("IN ITEM CLASS")
-        print(self.player.map)
-        print(self.player)
         useResult = None
         if self.owner.objName == "Lighting Scroll":
             useResult = self.lightingSpell(self.value, nonPlayerList)
@@ -1468,15 +1465,10 @@ class GameRunner:
         self.menu = menu(self.surfaceMain, self.player, self.nonPlayerList, self.surfaceMap, self.GameDrawer)
 
         self.map.player = self.player
-        print(self.map)
-        print(self.player)
-
+        
         #add fix to spell casting
         for item in self.player.container.inventory:
             item.player = self.player
-            print("AFTER UPDATING ITEMS")
-            print(self.map)
-            print(self.player)
         
         self.placeObjects()
         self.player.enemyList = self.nonPlayerList
