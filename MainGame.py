@@ -10,9 +10,14 @@ from typing import Tuple
 import constants
 
 
+# __     ___      _                     __  __                  
+# \ \   / (_) ___| |_ ___  _ __ _   _  |  \/  | ___ _ __  _   _ 
+#  \ \ / /| |/ __| __/ _ \| '__| | | | | |\/| |/ _ \ '_ \| | | |
+#   \ V / | | (__| || (_) | |  | |_| | | |  | |  __/ | | | |_| |
+#    \_/  |_|\___|\__\___/|_|   \__, | |_|  |_|\___|_| |_|\__,_|
+#                               |___/                         
 
-
-#class to handle player death
+#class to handle player victory screen 
 class victoryMenu:
     #fills screen with grey and forces user to quit game
     #also displays a congratulations message
@@ -1579,7 +1584,7 @@ class GameRunner:
                     objects_at_player = self.map.map_objects_atcoords(self.player.x, self.player.y, self.GameDrawer.nonPlayerList)
 
                     for obj in objects_at_player:
-                        if obj.item:
+                        if obj.item and not obj.stairs:
                            gameMessages = obj.item.pickUp(self.GameDrawer.nonPlayerList)
                            if gameMessages != []:
                                 for message in gameMessages:
