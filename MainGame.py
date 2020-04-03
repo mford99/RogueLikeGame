@@ -1447,6 +1447,7 @@ class GameRunner:
             print(self.player)
         
         self.placeObjects()
+        self.player.enemyList = self.nonPlayerList
 
     #method to place objects on map, may be moved to a different class later
     def placeObjects(self):
