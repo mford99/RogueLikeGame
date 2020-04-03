@@ -76,7 +76,6 @@ class genPlayer:
         playerCreature = Creature("Python", 15, baseAtck=3)
         playerInv = Container()
         player = Actor(x,y,constants.playerSprite, self.surface, self.map, self.nonPlayerList, "Player", playerCreature, None, playerInv, surfaceMap= self.surfaceMap)
-        self.nonPlayerList.append(player)
         return player
 
 #class to place enemies randomly. 
@@ -95,12 +94,12 @@ class genEnemies:
         randomNum = tcod.random_get_int(0,1,100)
 
         if randomNum > 15: 
-            crabEnemy = genCrab(coords, self.surface, self.player, self.map, self.nonPlayerList, self.surfaceMap)
+            crabEnemy = genCrab(coords, self.surface, self.player, self.map, [self.player], self.surfaceMap)
             crabEnemyActor = crabEnemy.generate()
             self.nonPlayerList.append(crabEnemyActor)
             return crabEnemyActor
         else: 
-            cobraEnemy = genCobra(coords, self.surface, self.player, self.map, self.nonPlayerList, self.surfaceMap)
+            cobraEnemy = genCobra(coords, self.surface, self.player, self.map, [self.player], self.surfaceMap)
             cobraEnemyActor = cobraEnemy.generate()
             self.nonPlayerList.append(cobraEnemyActor)
             return cobraEnemyActor
@@ -441,6 +440,9 @@ class targetselect:
 
     def menu_target_select(self, coordsOrigin = None, maxRange = None, penetrateWalls = True, mark = None, pierce_creature = True, radius = None):
         menuClose = False
+        print("INSIDE TARGET SEL")
+        print(self.map)
+        print(self.player)
         while not menuClose:
             #get mouse position
             mouse_x, mouse_y = pygame.mouse.get_pos()
@@ -617,7 +619,6 @@ class Actor:
         self.map = map
         self.ai = AI()
         self.enemyList = enemyList
-        self.objName = objName
         self.surfaceMap = surfaceMap
        
         self.creature = creature
@@ -707,8 +708,12 @@ class Actor:
 
         distance = math.sqrt(dx**2 + dy**2)
 
-        dx = int(round(dx/distance))
-        dy = int(round(dy/distance))
+        if(distance <=0):
+            dx = 0
+            dy = 0
+        else:
+            dx = int(round(dx/distance))
+            dy = int(round(dy/distance))
 
         return self.move(dx,dy)
 
@@ -835,6 +840,9 @@ class Item:
     # will call different methods depending on 
     # what the actor's name is. TO BE FINSIHED
     def use(self, nonPlayerList):
+        print("IN ITEM CLASS")
+        print(self.player.map)
+        print(self.player)
         useResult = None
         if self.owner.objName == "Lighting Scroll":
             useResult = self.lightingSpell(self.value, nonPlayerList)
@@ -1394,7 +1402,7 @@ class Map:
 
 #Main Game class with main game loop
 class GameRunner:
-    def __init__(self, surface, map = None):
+    def __init__(self, surface, player, map = None):
         self.clock = pygame.time.Clock()
         self.surfaceMain = surface
         
@@ -1411,8 +1419,15 @@ class GameRunner:
             self.map = Map(self.fovCalculate, self.nonPlayerList, self.surfaceMain, surfaceMap=self.surfaceMap, camera= self.camera)
         self.currentRooms = self.map.listOfRooms
 
-        self.playerGen = genPlayer(self.surfaceMain, self.map, self.nonPlayerList, self.surfaceMap)
-        self.player = self.playerGen.generate(self.map.listOfRooms[0].center())
+        if player == None:
+            self.playerGen = genPlayer(self.surfaceMain, self.map, self.nonPlayerList, self.surfaceMap)
+            self.player = self.playerGen.generate(self.map.listOfRooms[0].center())
+        else:
+            self.player = player
+            self.player.x, self.player.y = self.map.listOfRooms[0].center()
+            self.player.map = self.map
+            self.player.surfaceMap = self.surfaceMap
+            self.player.surface = self.surfaceMain
 
         self.camera.player = self.player
 
@@ -1421,7 +1436,16 @@ class GameRunner:
         self.menu = menu(self.surfaceMain, self.player, self.nonPlayerList, self.surfaceMap, self.GameDrawer)
 
         self.map.player = self.player
+        print(self.map)
+        print(self.player)
 
+        #add fix to spell casting
+        for item in self.player.container.inventory:
+            item.player = self.player
+            print("AFTER UPDATING ITEMS")
+            print(self.map)
+            print(self.player)
+        
         self.placeObjects()
 
     #method to place objects on map, may be moved to a different class later
@@ -1453,9 +1477,12 @@ class GameRunner:
     #main game loop 
     def game_main_loop(self):
  
+        #add fix to spell casting
+
         gameQuitStatus = False
         TransNext = False
         while not gameQuitStatus:
+
             playerAction = "no-action"
             playerAction = self.handleKeys()
             self.map.calculateFOV()
@@ -1479,7 +1506,7 @@ class GameRunner:
                 gameQuitStatus = True
                 TransNext = True
         
-        return (TransNext, self.map)
+        return (TransNext, self.map, self.player)
 
     #append a message to be draw to the screen
     def gameMessagesAppend(self, gameMessage, msgColor):
@@ -1559,16 +1586,16 @@ class GameRunner:
 #class to start the game. AKin to TicTacToeApplication in Assignment 1 of Software Design
 class MainGameApplication:
     def __init__(self, surface):
-        self.NewGame = GameRunner(surface)
         self.prevMaps = []
         self.surface = surface
+        self.player = None
 
     def RunGame(self):
         mapTransitionNext = True
         while(True):
             if(mapTransitionNext == True):
-                self.NewGame = GameRunner(self.surface)
-                mapTransitionNext, prevMap = self.NewGame.game_main_loop()
+                self.NewGame = GameRunner(self.surface, self.player)
+                mapTransitionNext, prevMap, self.player = self.NewGame.game_main_loop()
                 self.prevMaps.append(prevMap)
 
 
