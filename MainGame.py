@@ -47,9 +47,9 @@ class victoryMenu:
 # |____/ \___|\__,_|\__|_| |_| |_|  |_|\___|_| |_|\__,_|
 
 #class to handle player death
-class deathMenu:
+class deathScreen:
     #fills screen with grey and forces user to quit game
-    def deathMenu(self, surface):
+    def deathScreen(self, surface):
         while True:
             surface.fill(constants.colorDefaultBG)
             deathMessageCoords = (constants.cameraWidth/2, (constants.cameraHeight/2) - 40)
@@ -86,6 +86,7 @@ class genStairs:
     def genStairs(self, coords, downwards):
         x,y = coords
 
+        #stairs are always downwards for now, but easily able to add stairs that go backwards
         if downwards:
             stairs = Stairs(downwards)
 
@@ -813,8 +814,8 @@ class Creature:
     def deathFunction(self):
         gameMessage = self.owner.displayName + " is dead!"
         if (self.owner.objName == "Player"):
-            deathScreen = deathMenu()
-            deathScreen.deathMenu(self.owner.surface)
+            deathScreen = deathScreen()
+            deathScreen.deathScreen(self.owner.surface)
         self.owner.creature = None
         self.owner.ai = None
         return gameMessage
