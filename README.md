@@ -45,4 +45,26 @@ This is a roguelike, dungeon crawling top-down game made with pygame and small a
 					python MainGame.py
 		
 			That's it! The game has officially started and you can enjoy PyGame: The Game!
+			
+		/**************************************************************
+		*			Notes About PyGame The Game
+		*
+		*			By: Marcus Ford - 201712775
+		*			    Bowen Wang - 201521242
+		*
+		****************************************************************/
+	
+	
+			To play the game, use the up, down, left, and right arrow keys to move the player character, the snake.
+			
+			Holding the keys down will cause contionous key inputs. I.e. if the user wants to continously move left they can 			 hold the left arrow key instead of constantly hitting the left key. 
+			
+			The goal of the game is to beat five floors of the dungeon without dying.
+			
+			Each enemy killed can be picked up.
+			
+			In order to pick up all items on a particular tile, hit the G key. The P key pauses the game. The I key opens    			the inventory where the user can then click on an item to use it. If the item is a corpse, the user will eat it     			 to restoreHP. If the item is a spell, the targeting menu for the spell will close the inventory and allow the 	                          user to cast the spell.Finally, if the item selected is a sword or shield it will be equipped. When finding the   			   stairs to the next floor, hitting LSHIFT or RSHIFT on them will take the user to the next floor.
+			Finally, when selecting a target for a spell, the user can hit Q at any time to cancel the spell and place it
+			back into the player's inventory.
+
 
