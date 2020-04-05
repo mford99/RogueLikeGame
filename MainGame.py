@@ -1134,7 +1134,6 @@ class GameDraw:
         self.surface.fill(constants.colorBlack)
         
         self.surfaceMap.fill(constants.colorBlack)
-        displayRect = pygame.Rect((50,50),(constants.cameraWidth, constants.cameraHeight) )
         
         self.camera.update()
 
