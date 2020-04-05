@@ -6,13 +6,13 @@ This is a roguelike, dungeon crawling top-down game made with pygame and small a
 
 
 
-								/**************************************************************
-								*		Instructions for Running and Using PyGame The Game
-								*
-								*				By: Marcus Ford - 201712775
-								*					Bowen Wang - 201521242
-								*
-								****************************************************************/
+		/**************************************************************
+		*		Instructions for Running and Using PyGame The Game
+		*
+		*				By: Marcus Ford - 201712775
+		*					Bowen Wang - 201521242
+		*
+		****************************************************************/
 
 	Step 1:
 			Install Python version 3.5.8 or above, if not already installed. To check for instillation, simply run 'python'
