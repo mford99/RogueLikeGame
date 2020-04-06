@@ -66,7 +66,7 @@
 			
 			Finally, if the item selected is a sword or shield it will be equipped. When finding the 			  			  stairs to the next floor,
 			
-			Hitting LSHIFT or RSHIFT on them will take the user to the next floor.
+			Hitting LSHIFT or RSHIFT on them will take the user to the next floor when standing on stairs.
 			Finally, when selecting a target for a spell, the user can hit Q at any time to cancel the spell and place it
 			back into the player's inventory.
 
