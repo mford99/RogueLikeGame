@@ -33,10 +33,10 @@ colorGreen = (0,255,0)
 colorDefaultBG = colorGrey
 
 # #Sprites
-mainEnemySprite = pygame.transform.scale(pygame.image.load(dirPath + "\Sprites/Characters/mainEnemy.png"), (cellWidth, cellHeight))
-rareCobraSprite = pygame.transform.scale(pygame.image.load(dirPath + "\Sprites/Characters/cobra.png"), (cellWidth, cellHeight))
-playerSprite = pygame.image.load(dirPath + "\Sprites/Characters/mainCharacter1.png")
-wallSprite = pygame.image.load(dirPath + "\Sprites/Characters/wall.jpg")
+mainEnemySprite = pygame.transform.scale(pygame.image.load(dirPath + "/Sprites/Characters/mainEnemy.png"), (cellWidth, cellHeight))
+rareCobraSprite = pygame.transform.scale(pygame.image.load(dirPath + "/Sprites/Characters/cobra.png"), (cellWidth, cellHeight))
+playerSprite = pygame.image.load(dirPath + "/Sprites/Characters/mainCharacter1.png")
+wallSprite = pygame.image.load(dirPath + "/Sprites/Characters/wall.jpg")
 wallExploredSprite = pygame.image.load(dirPath + "/Sprites/Characters/wallunseen.png")
 floorSprite = pygame.image.load(dirPath +"/Sprites/Characters/floor.jpg")
 floorExploredSprite = pygame.image.load(dirPath +"/Sprites/Characters/floorExplored.png")
