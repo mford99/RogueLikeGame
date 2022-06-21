@@ -1,10 +1,10 @@
-				/**************************************************************
-				*		Instructions for Running and Using PyGame The Game
-				*
-				*				By: Marcus Ford - 201712775
-				*					Bowen Wang - 201521242
-				*
-				****************************************************************/
+		/**************************************************************
+		*		Instructions for Running and Using PyGame The Game
+		*
+		*				By: Marcus Ford - 201712775
+		*		                Bowen Wang - 201521242
+		*
+		****************************************************************/
 
 	Step 1:
 			Install Python version 3.5.8 or above, if not already installed. To check for instillation, simply run 'python'
@@ -32,10 +32,12 @@
 	Step 4:
 			Make sure the files are in the right place. There are two main files, MainGame.py and constants.py along with 
 			several image files that the game uses. Make sure that the MainGame.py file and the constants.py file are
-			in the same directory. Once this is done, add a new directory where the MainGame.py and constants.py are and 				call it 'Sprites'. Then, inside this Directory, make a new directory called 'Characters'. This is where every  				sprite the game uses are stored. Make sure every sprite is in this folder or the game will not work. Do not 				rename the sprites either.
+			in the same directory. Once this is done, add a new directory where the MainGame.py and constants.py are and 				                call it 'Sprites'. Then, inside this Directory, make a new directory called 'Characters'. This is where every 
+			sprite the game uses are stored. Make sure every sprite is in this folder or the game will not work. Do not 				                rename the sprites either.
 	
-	Step 5: Compile and run the game. To compile and run the game, first cd into the directory which contains MainGame.py and constants.py.
-			Then, run the following command:
+	Step 5: 
+	                Compile and run the game. To compile and run the game, first cd into the directory which contains MainGame.py 
+			and constants.py. Then, run the following command:
 					
 					python MainGame.py
 		
@@ -43,13 +45,13 @@
 			
 	
 	
-					/**************************************************************
-					*				Notes About PyGame The Game
-					*
-					*				By: Marcus Ford - 201712775
-					*				    Bowen Wang - 201521242
-					*
-					****************************************************************/
+			/**************************************************************
+			*				Notes About PyGame The Game
+			*
+			*				By: Marcus Ford - 201712775
+			*				    Bowen Wang - 201521242
+			*
+			****************************************************************/
 	
 	
 			To play the game, use the up, down, left, and right arrow keys to move the player character, the snake.
